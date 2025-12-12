@@ -8,26 +8,17 @@
     android:padding="16dp"
     tools:context=".MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Android 屏幕捕获示例"
-        android:textSize="20sp"
-        android:layout_marginBottom="30dp"/>
-
     <Button
         android:id="@+id/btn_start_capture"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="请求并开始屏幕截图" />
+        android:text="1. 请求授权并启动服务" />
 
-    <TextView
+    <Button
+        android:id="@+id/btn_take_screenshot"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:padding="10dp"
-        android:text="注意：点击后，系统将弹出授权对话框，且截图过程中顶部通知栏会显示前台服务通知。"
-        android:textColor="@android:color/holo_red_dark"
-        android:textSize="12sp"/>
+        android:layout_marginTop="15dp"
+        android:text="2. 执行一次截屏操作" />
 
 </LinearLayout>

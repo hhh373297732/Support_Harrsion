@@ -18,6 +18,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
@@ -25,7 +26,10 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.support.harrsion.R;
+import com.support.harrsion.agent.utils.DeviceUtil;
+import com.support.harrsion.dto.screenshot.Screenshot;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
@@ -36,6 +40,7 @@ public class ScreenCaptureService extends Service {
     private static final String TAG = "ScreenCaptureService";
     private static final int NOTIFICATION_ID = 101;
     private static final String NOTIFICATION_CHANNEL_ID = "ScreenCaptureChannel";
+    private static final String ACTION_SCREENSHOT = "com.support.harrsion.ACTION_SCREENSHOT";
 
     private MediaProjectionManager mProjectionManager;
     private MediaProjection mMediaProjection;
@@ -78,19 +83,32 @@ public class ScreenCaptureService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null) {
-            int resultCode = intent.getIntExtra("resultCode", 0);
-            Intent data = intent.getParcelableExtra("data");
+            String action = intent.getAction();
 
-            if (resultCode != 0 && data != null) {
-                // 收到授权结果，开始 MediaProjection
-                setUpMediaProjection(resultCode, data);
-                setUpVirtualDisplay();
-                // 启动后立即执行一次截图，然后停止服务
-                mHandler.postDelayed(this::takeScreenshot, 500);
+            if (ACTION_SCREENSHOT.equals(action)) {
+                // 🚀 收到截图指令，立即执行截图
+                mHandler.post(this::takeScreenshot);
+                Log.d(TAG, "收到截图指令并执行。");
+                // 服务保持运行
+                return START_STICKY;
 
-                // 为了演示，这里设置服务在截图完成后停止。
-                // 如果需要持续在后台监控，您需要在这里实现更复杂的逻辑
+            } else {
+                // 第一次启动（收到授权结果）
+                int resultCode = intent.getIntExtra("resultCode", 0);
+                Intent data = intent.getParcelableExtra("data");
+
+                if (resultCode != 0 && data != null) {
+                    // 收到授权结果，初始化 MediaProjection
+                    setUpMediaProjection(resultCode, data);
+                    setUpVirtualDisplay();
+                    Log.d(TAG, "服务初始化完成，等待截图指令...");
+                    // 服务保持运行
+                    return START_STICKY;
+                }
             }
+
+            // 如果没有授权数据，停止自身
+            stopSelf();
         }
         return START_NOT_STICKY;
     }
@@ -165,16 +183,31 @@ public class ScreenCaptureService extends Service {
                 bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height);
             }
 
-            // 4. 保存 Bitmap 到文件
-            saveBitmap(bitmap);
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
+            // 压缩为 PNG 格式 (无损且支持透明度，推荐用于截图)
+            // 如果对文件大小要求更高，可以使用 JPEG，但会损失画质。
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+
+            byte[] byteArray = outputStream.toByteArray();
+
+            // 释放 Bitmap 内存
+            bitmap.recycle();
+
+            String base64Data = Base64.encodeToString(byteArray, Base64.DEFAULT);
+
+            Screenshot screenshot = Screenshot.builder()
+                    .base64Data(base64Data)
+                    .height(height)
+                    .width(width)
+                    .build();
+            DeviceUtil.handleScreenshotResult(screenshot, null);
         } catch (Exception e) {
             Log.e(TAG, "截图处理或保存失败", e);
+            DeviceUtil.handleScreenshotResult(null, "截图处理或保存失败");
         } finally {
-            // **必须关闭 Image** 否则会内存泄漏并阻止后续捕获
+            // **必须关闭 Image** 否则会内存泄漏
             image.close();
-            // 截图完成后，停止服务并释放资源
-            stopSelf();
         }
     }
 

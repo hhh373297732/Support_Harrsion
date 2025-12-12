@@ -8,13 +8,17 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.support.harrsion.agent.Agent;
+import com.support.harrsion.agent.utils.DeviceUtil;
+import com.support.harrsion.dto.model.ModelConfig;
 import com.support.harrsion.service.ScreenCaptureService;
+
+import java.util.concurrent.Executor;
 
 public class MainActivity extends Activity {
 
     private static final int REQUEST_CODE_SCREEN_CAPTURE = 1001;
-    private MediaProjectionManager mProjectionManager;
-    private Button startCaptureButton;
+    private MediaProjectionManager mProjectionManager;// 确保和 Service 中的定义一致
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,9 +26,18 @@ public class MainActivity extends Activity {
         // 假设您的布局文件中有一个ID为 btn_start_capture 的按钮
         setContentView(R.layout.activity_main);
 
-        startCaptureButton = findViewById(R.id.btn_start_capture);
+        Button startCaptureButton = findViewById(R.id.btn_start_capture);
         startCaptureButton.setOnClickListener(v -> requestScreenCapturePermission());
+        Button takeScreenshotButton = findViewById(R.id.btn_take_screenshot);
+        takeScreenshotButton.setOnClickListener(v -> {
+            ModelConfig modelConfig = new ModelConfig();
+            modelConfig.setBaseUrl("https://open.bigmodel.cn/api/paas/v4");
+            modelConfig.setApiKey("af8c20abc40d466ab939c07ca7359912.ZnyCoeosnZYZGQTJ");
+            modelConfig.setModelName("autoglm-phone");
 
+            Agent agent = new Agent(this, modelConfig);
+            agent.run("打开美团app");
+        });
         // 获取 MediaProjectionManager 实例
         mProjectionManager = (MediaProjectionManager)
                 getSystemService(Context.MEDIA_PROJECTION_SERVICE);
@@ -67,4 +80,6 @@ public class MainActivity extends Activity {
             }
         }
     }
+
+
 }
