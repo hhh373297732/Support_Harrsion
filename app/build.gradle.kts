@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.support.harrsion"
-        minSdk = 26
+        minSdk = 29
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -19,6 +19,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -55,7 +61,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     compileOnly("org.projectlombok:lombok:1.18.30")
     annotationProcessor("org.projectlombok:lombok:1.18.30")
-    implementation("com.openai:openai-java:4.6.1")
+    implementation("com.openai:openai-java:4.11.0")
     implementation("com.alibaba.fastjson2:fastjson2:2.0.60")
     implementation("org.apache.commons:commons-lang3:3.18.0")
     testImplementation(libs.junit)

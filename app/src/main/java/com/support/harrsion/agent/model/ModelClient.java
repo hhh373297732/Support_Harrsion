@@ -1,6 +1,5 @@
 package com.support.harrsion.agent.model;
 
-import com.alibaba.fastjson2.JSON;
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
 import com.openai.models.chat.completions.ChatCompletion;
@@ -9,12 +8,10 @@ import com.openai.models.chat.completions.ChatCompletionMessageParam;
 import com.support.harrsion.dto.model.ModelConfig;
 import com.support.harrsion.dto.model.ModelResponse;
 
+import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import lombok.val;
 
 public class ModelClient {
 
@@ -27,6 +24,7 @@ public class ModelClient {
         this.client = OpenAIOkHttpClient.builder()
                 .baseUrl(this.config.getBaseUrl())
                 .apiKey(this.config.getApiKey())
+                .timeout(Duration.ofSeconds(30))
                 .build();
     }
 
@@ -41,14 +39,13 @@ public class ModelClient {
                 .messages(messages)
                 .model(this.config.getModelName())
                 .maxCompletionTokens(this.config.getMaxTokens())
+//                .topP(this.config.getTopP())
+//                .frequencyPenalty(this.config.getFrequencyPenalty())
                 .temperature(this.config.getTemperature())
-                .topP(this.config.getTopP())
-                .frequencyPenalty(this.config.getFrequencyPenalty())
                 .build();
         ChatCompletion response = this.client.chat().completions().create(params);
-        String rawContent = String.valueOf(response.choices().getFirst().message().content());
-
-        // Parse thinking and action from response
+        String rawContent = response.choices().get(0).message().content().get();
+//         Parse thinking and action from response
         String[] parseResponse = _parseResponse(rawContent);
         String thinking = parseResponse[0];
         String action = parseResponse[1];
@@ -77,7 +74,7 @@ public class ModelClient {
     private String[] _parseResponse(String content) {
         // Rule 1: Check for finish(message=
         if (content.contains("finish(message=")) {
-            String[] parts = content.split("finish\\(message=", 1);
+            String[] parts = content.split("finish\\(message=");
             String thinking = parts[0].strip();
             String action = "finish(message=" + parts[1];
             return new String[]{thinking, action};
@@ -85,7 +82,7 @@ public class ModelClient {
 
         // Rule 2: Check for do(action=
         if (content.contains("do(action=")) {
-            String[] parts = content.split("do\\(action=", 1);
+            String[] parts = content.split("do\\(action=");
             String thinking = parts[0].strip();
             String action = "do(action=" + parts[1];
             return new String[]{thinking, action};
@@ -93,7 +90,7 @@ public class ModelClient {
 
         // Rule 3: Fallback to legacy XML tag parsing
         if (content.contains("<answer>")) {
-            String[] parts = content.split("<answer>", 1);
+            String[] parts = content.split("<answer>");
             String thinking = parts[0].replace("<think>", "")
                     .replace("</think>", "").strip();
             String action = parts[1].replace("</answer>", "").strip();

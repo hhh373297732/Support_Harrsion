@@ -187,7 +187,7 @@ public class ScreenCaptureService extends Service {
 
             // 压缩为 PNG 格式 (无损且支持透明度，推荐用于截图)
             // 如果对文件大小要求更高，可以使用 JPEG，但会损失画质。
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+            bitmap.compress(Bitmap.CompressFormat.WEBP, 80, outputStream);
 
             byte[] byteArray = outputStream.toByteArray();
 
@@ -195,11 +195,13 @@ public class ScreenCaptureService extends Service {
             bitmap.recycle();
 
             String base64Data = Base64.encodeToString(byteArray, Base64.DEFAULT);
+            Log.d(TAG, "Base64 数据长度: " + base64Data.length());
 
             Screenshot screenshot = Screenshot.builder()
                     .base64Data(base64Data)
                     .height(height)
                     .width(width)
+                    .isSensitive(false)
                     .build();
             DeviceUtil.handleScreenshotResult(screenshot, null);
         } catch (Exception e) {

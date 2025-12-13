@@ -3,25 +3,27 @@ package com.support.harrsion.agent;
 import android.content.Context;
 import android.util.Log;
 
+import com.alibaba.fastjson2.JSON;
 import com.openai.models.chat.completions.ChatCompletionMessageParam;
-import com.support.harrsion.agent.device.AgentScreenshotCallback;
+import com.support.harrsion.agent.action.ActionHandle;
+import com.support.harrsion.agent.device.ScreenshotCallback;
 import com.support.harrsion.agent.model.MessageBuilder;
 import com.support.harrsion.agent.model.ModelClient;
 import com.support.harrsion.agent.utils.DeviceUtil;
-import com.support.harrsion.dto.StepResult;
+import com.support.harrsion.agent.utils.MessageParseUtil;
+import com.support.harrsion.dto.action.ActionResult;
 import com.support.harrsion.dto.agent.AgentConfig;
 import com.support.harrsion.dto.model.ModelConfig;
 import com.support.harrsion.dto.model.ModelResponse;
 import com.support.harrsion.dto.model.UserMessageOption;
 import com.support.harrsion.dto.screenshot.Screenshot;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
-public class Agent implements AgentScreenshotCallback {
+
+public class Agent implements ScreenshotCallback {
 
     private final AgentConfig agentConfig;
     private final ModelConfig modelConfig;
@@ -30,7 +32,9 @@ public class Agent implements AgentScreenshotCallback {
 
     private int _stepCount = 0;
     private ModelClient modelClient;
-    private String _currentTask; // 🌟 新增：存储当前任务
+    private String _currentTask;
+    private String _currentApp;
+    private ActionHandle actionHandle;
 
     public Agent(Context context, ModelConfig modelConfig) {
         this.appContext = context;
@@ -48,6 +52,7 @@ public class Agent implements AgentScreenshotCallback {
 
     private void _init() {
         this.modelClient = new ModelClient(this.modelConfig);
+        this.actionHandle = new ActionHandle(this.appContext);
         this.reset();
     }
 
@@ -63,8 +68,8 @@ public class Agent implements AgentScreenshotCallback {
         this._stepCount = 0;
         this._currentTask = task; // 存储任务
 
-        // 🌟 第一步：启动异步截图，并将 Agent 自身作为回调传递
-        this._executeStepAsync(true);
+        // send hi to model to check if it's ready
+        this._checkModelApi();
 
 
         // First step with user prompt
@@ -147,11 +152,11 @@ public class Agent implements AgentScreenshotCallback {
 //                .build();
 //    }
 
+
     /**
      * 启动异步截图，并等待回调。
-     * @param isFirst 是否为第一步
      */
-    private void _executeStepAsync(boolean isFirst) {
+    private void _executeStepAsync() {
         if (this._stepCount >= this.agentConfig.getMaxSteps()) {
             Log.d("Agent", "Max steps reached");
             return; // 结束流程
@@ -160,18 +165,42 @@ public class Agent implements AgentScreenshotCallback {
         DeviceUtil.triggerScreenshot(this.appContext, this);
     }
 
+    private void _checkModelApi() {
+        this.modelClient.requestAsync(List.of(MessageBuilder.createUserMessage(UserMessageOption
+                        .builder()
+                        .text("Hi,回复一个ok")
+                        .build()))
+                , new ModelClient.Callback() {
+            @Override
+            public void onSuccess(ModelResponse response) {
+                _currentApp = DeviceUtil.getHardwareDeviceName();
+                Log.d("Agent", "✅ Model API checks passed!");
+                Log.d("Agent", "=".repeat(50));
+                Log.d("Agent", "Phone Agent - AI-powered phone automation");
+                Log.d("Agent", "=".repeat(50));
+                Log.d("Agent", "Model：" + modelConfig.getModelName());
+                Log.d("Agent", "Base URL：" + modelConfig.getBaseUrl());
+                Log.d("Agent", "Max Steps：" + agentConfig.getMaxSteps());
+                Log.d("Agent", "Device：" + _currentApp);
+                Log.d("Agent", "=".repeat(50));
+                _executeStepAsync();
+            }
+
+            @Override
+            public void onError(Exception e) {
+                e.printStackTrace();
+                Log.d("Agent", "❌ Model API check failed. Please fix the issues above.");
+            }
+        });
+    }
+
     @Override
     public void onScreenshotReady(Screenshot screenshot) {
-        // 🌟 截图数据到手！现在可以继续执行 LLM 逻辑
         this._stepCount++;
 
-        // 检查是否为第一步
         boolean isFirst = this._stepCount == 1;
 
-
-        String currentApp = DeviceUtil.getHardwareDeviceName();
-
-        String screenInfo = MessageBuilder.buildScreenInfo(currentApp);
+        String screenInfo = MessageBuilder.buildScreenInfo(this._currentApp);
 
         if (isFirst) {
             this._context.add(MessageBuilder.createSystemMessage(this.agentConfig.getSystemPrompt()));
@@ -184,11 +213,48 @@ public class Agent implements AgentScreenshotCallback {
                     UserMessageOption.builder().text(textContent).imageBase64(screenshot.getBase64Data()).build()));
         }
 
-        // 2. 获取模型响应
         this.modelClient.requestAsync(this._context, new ModelClient.Callback() {
             @Override
             public void onSuccess(ModelResponse response) {
                 Log.d("Agent", "Model Response: " + response.getRawContent());
+                Map<String, Object> action = MessageParseUtil.parseAction(response.getAction());
+                if (agentConfig.getVerbose()) {
+                    Log.d("Agent", "=".repeat(50));
+                    Log.d("Agent", "\uD83D\uDCAD thinking:");
+                    Log.d("Agent", "-".repeat(50));
+                    Log.d("Agent", response.getThinking());
+                    Log.d("Agent", "-".repeat(50));
+                    Log.d("Agent", "\uD83C\uDFAF action:");
+                    Log.d("Agent", JSON.toJSONString(action));
+                    Log.d("Agent", "=".repeat(50));
+                }
+
+                // 删除历史记录的图片信息，减少无效token
+                _context.set(_context.size() - 1, MessageBuilder
+                        .removeImagesFromMessage(_context.get(_context.size() - 1)));
+
+                ActionResult result = actionHandle.execute(action, screenshot.getWidth(), screenshot.getHeight());
+
+                _context.add(MessageBuilder.createAssistantMessage(
+                        String.format("<think>%s</think><answer>%s</answer>",
+                                response.getThinking(), response.getAction())));
+
+                Boolean finished;
+                if (String.valueOf(action.get("_metadata")).equals("finish")) {
+                    finished = true;
+                } else {
+                    finished = result.getShouldFinish();
+                }
+
+                if (finished && agentConfig.getVerbose()) {
+                    Log.d("Agent", "🎉 " + "=".repeat(47));
+                    Log.d("Agent", "✅ task_completed：" + (
+                            result.getMessage() != null && !result.getMessage().isEmpty()
+                                    ? result.getMessage()
+                                    : action.getOrDefault("message", "done")
+                    ));
+                    Log.d("Agent", "=".repeat(50));
+                }
             }
 
             @Override
