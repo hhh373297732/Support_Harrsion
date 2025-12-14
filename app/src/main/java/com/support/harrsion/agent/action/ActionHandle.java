@@ -3,23 +3,19 @@ package com.support.harrsion.agent.action;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.widget.Toast;
 
 import com.alibaba.fastjson2.JSON;
 import com.support.harrsion.agent.utils.DeviceUtil;
 import com.support.harrsion.config.AppPackage;
 import com.support.harrsion.dto.action.ActionResult;
-import com.support.harrsion.service.AccessibilityService;
+import com.support.harrsion.service.ActionService;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import lombok.val;
 
 public class ActionHandle {
 
@@ -58,10 +54,16 @@ public class ActionHandle {
                 return _handleLaunch(action);
             case "Tap":
                 return _handleTap(action, width, height);
+            case "Double Tap":
+                return _handleDoubleTap(action, width, height);
             case "Type":
                 return _handleType(action);
             case "Swipe":
                 return _handleSwipe(action, width, height);
+            case "Back":
+                return _handleBack();
+            case "Home":
+                return _handleHome();
             default:
                 return ActionResult.builder()
                         .success(true)
@@ -93,14 +95,55 @@ public class ActionHandle {
     }
 
     private ActionResult _handleTap(Map<String, Object> action, int width, int height) {
+        if (!action.containsKey("element")) {
+            return ActionResult.builder()
+                    .success(false)
+                    .shouldFinish(false)
+                    .message("No element coordinates")
+                    .build();
+        }
         List<Float> element = JSON.parseArray(String.valueOf(action.get("element")), Float.class);
         List<Float> local = DeviceUtil.convertRelativeToAbsolute(element, width, height);
 
         if (action.containsKey("message")) {
-            // todo: Check for sensitive operation
+            return ActionResult.builder()
+                    .success(false)
+                    .shouldFinish(true)
+                    .message("User cancelled sensitive operation")
+                    .build();
         }
 
-        AccessibilityService.getInstance().clickByXY(local.get(0), local.get(1));
+        ActionService.getInstance().clickByXY(local.get(0), local.get(1));
+
+        return ActionResult.builder()
+                .success(true)
+                .shouldFinish(false)
+                .build();
+    }
+
+    private ActionResult _handleDoubleTap(Map<String, Object> action, int width, int height) {
+        if (!action.containsKey("element")) {
+            return ActionResult.builder()
+                    .success(false)
+                    .shouldFinish(false)
+                    .message("No element coordinates")
+                    .build();
+        }
+        List<Float> element = JSON.parseArray(String.valueOf(action.get("element")), Float.class);
+        List<Float> local = DeviceUtil.convertRelativeToAbsolute(element, width, height);
+
+        if (action.containsKey("message")) {
+            return ActionResult.builder()
+                    .success(false)
+                    .shouldFinish(true)
+                    .message("User cancelled sensitive operation")
+                    .build();
+        }
+
+        ActionService.getInstance().clickByXY(local.get(0), local.get(1));
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            ActionService.getInstance().clickByXY(local.get(0), local.get(1));
+        }, 100);
 
         return ActionResult.builder()
                 .success(true)
@@ -123,7 +166,7 @@ public class ActionHandle {
         List<Float> startLocal = DeviceUtil.convertRelativeToAbsolute(start, width, height);
         List<Float> endLocal = DeviceUtil.convertRelativeToAbsolute(end, width, height);
 
-        AccessibilityService.getInstance().swipe(startLocal.get(0), startLocal.get(1),
+        ActionService.getInstance().swipe(startLocal.get(0), startLocal.get(1),
                 endLocal.get(0), endLocal.get(1), 300);
 
         return ActionResult.builder()
@@ -134,9 +177,24 @@ public class ActionHandle {
 
     private ActionResult _handleType(Map<String, Object> action) {
         String text = String.valueOf(action.get("text"));
-        AccessibilityService.getInstance().inputText("");
-        AccessibilityService.getInstance().inputText(text);
+        ActionService.getInstance().inputText(text);
 
+        return ActionResult.builder()
+                .success(true)
+                .shouldFinish(false)
+                .build();
+    }
+
+    private ActionResult _handleBack() {
+        ActionService.getInstance().goBack();
+        return ActionResult.builder()
+                .success(true)
+                .shouldFinish(false)
+                .build();
+    }
+
+    private ActionResult _handleHome() {
+        ActionService.getInstance().goHome();
         return ActionResult.builder()
                 .success(true)
                 .shouldFinish(false)

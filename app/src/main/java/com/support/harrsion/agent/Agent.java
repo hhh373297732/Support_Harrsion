@@ -2,7 +2,6 @@ package com.support.harrsion.agent;
 
 import android.content.Context;
 import android.util.Log;
-
 import com.alibaba.fastjson2.JSON;
 import com.openai.models.chat.completions.ChatCompletionMessageParam;
 import com.support.harrsion.agent.action.ActionHandle;
@@ -35,6 +34,7 @@ public class Agent implements ScreenshotCallback {
     private String _currentTask;
     private String _currentApp;
     private ActionHandle actionHandle;
+    private Boolean initFlag = false;
 
     public Agent(Context context, ModelConfig modelConfig) {
         this.appContext = context;
@@ -64,12 +64,15 @@ public class Agent implements ScreenshotCallback {
      */
     public void run(String task) {
         // init context and step count
-        this._context.clear();
-        this._stepCount = 0;
-        this._currentTask = task; // 存储任务
+        this.reset();
+        this._currentTask = task;
 
-        // send hi to model to check if it's ready
-        this._checkModelApi();
+        if (initFlag) {
+            this._executeStepAsync();
+        } else {
+            this._checkModelApi();
+            this.initFlag = true;
+        }
     }
 
     /**
@@ -190,6 +193,8 @@ public class Agent implements ScreenshotCallback {
 
                 if (_stepCount < agentConfig.getMaxSteps()) {
                     _executeStepAsync();
+                } else {
+                    Log.d("Agent", "❌ Max steps reached");
                 }
 
             }

@@ -15,7 +15,7 @@ import com.support.harrsion.R;
 import com.support.harrsion.agent.Agent;
 import com.support.harrsion.dto.model.ModelConfig;
 
-public class AgentService  extends Service {
+public class AgentService extends Service {
 
     private static final int AGENT_ID = 110;
     private Agent agent;
@@ -47,15 +47,13 @@ public class AgentService  extends Service {
     }
 
     private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    "agent",
-                    "Agent Service",
-                    NotificationManager.IMPORTANCE_LOW
-            );
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(channel);
-        }
+        NotificationChannel channel = new NotificationChannel(
+                "agent",
+                "Agent Service",
+                NotificationManager.IMPORTANCE_LOW
+        );
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        manager.createNotificationChannel(channel);
     }
 
     private Notification buildNotification() {

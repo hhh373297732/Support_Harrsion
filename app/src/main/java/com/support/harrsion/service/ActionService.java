@@ -1,5 +1,6 @@
 package com.support.harrsion.service;
 
+import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
 import android.annotation.SuppressLint;
 import android.graphics.Path;
@@ -11,10 +12,10 @@ import lombok.Getter;
 
 
 @SuppressLint("AccessibilityPolicy")
-public class AccessibilityService extends android.accessibilityservice.AccessibilityService {
+public class ActionService extends AccessibilityService {
 
     @Getter
-    private static AccessibilityService instance;
+    private static ActionService instance;
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
@@ -95,6 +96,14 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                 AccessibilityNodeInfo.ACTION_SET_TEXT,
                 args
         );
+    }
+
+    public boolean goBack() {
+        return performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK);
+    }
+
+    public boolean goHome() {
+        return performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME);
     }
 
     private AccessibilityNodeInfo findFocusedEditText(AccessibilityNodeInfo node) {

@@ -11,13 +11,13 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.support.harrsion.service.AgentService;
-import com.support.harrsion.service.AccessibilityService;
+import com.support.harrsion.service.ActionService;
 import com.support.harrsion.service.ScreenCaptureService;
 
 public class MainActivity extends Activity {
 
     private static final int REQUEST_CODE_SCREEN_CAPTURE = 1001;
-    private MediaProjectionManager mProjectionManager;// 确保和 Service 中的定义一致
+    private MediaProjectionManager mProjectionManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,7 +50,7 @@ public class MainActivity extends Activity {
 
     public static boolean isAccessibilityServiceEnabled(Context context) {
         String service = context.getPackageName() + "/" +
-                AccessibilityService.class.getCanonicalName();
+                ActionService.class.getCanonicalName();
 
         String enabledServices = Settings.Secure.getString(
                 context.getContentResolver(),
@@ -84,12 +84,7 @@ public class MainActivity extends Activity {
                 serviceIntent.putExtra("resultCode", resultCode);
                 serviceIntent.putExtra("data", data);
 
-                // 启动前台服务 (Android O及以上)
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    startForegroundService(serviceIntent);
-                } else {
-                    startService(serviceIntent);
-                }
+                startForegroundService(serviceIntent);
             } else {
                 // 用户拒绝授权
                 Toast.makeText(this, "用户拒绝屏幕捕获", Toast.LENGTH_SHORT).show();
