@@ -9,7 +9,105 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <queries>
+        <package android:name="com.tencent.mm" />
+        <package android:name="com.tencent.mobileqq" />
+        <package android:name="com.sina.weibo" />
         <package android:name="com.xingin.xhs" />
+        <package android:name="com.douban.frodo" />
+        <package android:name="com.zhihu.android" />
+
+        <package android:name="com.taobao.taobao" />
+        <package android:name="com.jingdong.app.mall" />
+        <package android:name="com.xunmeng.pinduoduo" />
+        <package android:name="com.einnovation.temu" />
+
+        <package android:name="com.autonavi.minimap" />
+        <package android:name="com.baidu.BaiduMap" />
+
+        <package android:name="com.sankuai.meituan" />
+        <package android:name="com.dianping.v1" />
+        <package android:name="me.ele" />
+        <package android:name="com.yek.android.kfc.activitys" />
+        <package android:name="com.mcdonalds.app" />
+
+        <package android:name="ctrip.android.view" />
+        <package android:name="com.MobileTicket" />
+        <package android:name="com.Qunar" />
+        <package android:name="com.sdu.did.psnger" />
+        <package android:name="com.booking" />
+        <package android:name="com.expedia.bookings" />
+
+        <package android:name="tv.danmaku.bili" />
+        <package android:name="com.ss.android.ugc.aweme" />
+        <package android:name="com.smile.gifmaker" />
+        <package android:name="com.tencent.qqlive" />
+        <package android:name="com.qiyi.video" />
+        <package android:name="com.youku.phone" />
+        <package android:name="com.hunantv.imgo.activity" />
+        <package android:name="com.phoenix.read" />
+        <package android:name="com.zhiliaoapp.musically" />
+        <package android:name="org.videolan.vlc" />
+
+        <package android:name="com.netease.cloudmusic" />
+        <package android:name="com.tencent.qqmusic" />
+        <package android:name="com.luna.music" />
+        <package android:name="com.ximalaya.ting.android" />
+        <package android:name="com.Project100Pi.themusicplayer" />
+        <package android:name="code.name.monkey.retromusic" />
+
+        <package android:name="com.dragon.read" />
+        <package android:name="com.kmxs.reader" />
+        <package android:name="com.google.android.apps.books" />
+
+        <package android:name="com.ss.android.lark" />
+        <package android:name="com.tencent.androidqqmail" />
+        <package android:name="com.google.android.gm" />
+        <package android:name="com.google.android.apps.docs.editors.docs" />
+        <package android:name="com.google.android.apps.docs" />
+        <package android:name="com.google.android.apps.docs.editors.slides" />
+        <package android:name="com.google.android.apps.tasks" />
+        <package android:name="com.google.android.keep" />
+        <package android:name="net.cozic.joplin" />
+        <package android:name="com.scientificcalculatorplus.simplecalculator.basiccalculator.mathcalc" />
+        <package android:name="com.simplemobiletools.smsmessenger" />
+
+        <package android:name="com.larus.nova" />
+        <package android:name="com.android.fileexplorer" />
+        <package android:name="com.google.android.apps.nbu.files" />
+        <package android:name="org.telegram.messenger" />
+        <package android:name="com.whatsapp" />
+        <package android:name="com.twitter.android" />
+        <package android:name="com.quora.android" />
+        <package android:name="com.reddit.frontpage" />
+
+        <package android:name="com.gotokeep.keep" />
+        <package android:name="com.lingan.seeyou" />
+        <package android:name="com.duolingo" />
+        <package android:name="com.google.android.apps.fitness" />
+        <package android:name="com.flauschcode.broccoli" />
+
+        <package android:name="com.tencent.news" />
+        <package android:name="com.ss.android.article.news" />
+
+        <package android:name="com.lianjia.beike" />
+        <package android:name="com.anjuke.android.app" />
+
+        <package android:name="com.hexin.plat.android" />
+        <package android:name="com.rammigsoftware.bluecoins" />
+
+        <package android:name="com.miHoYo.hkrpg" />
+        <package android:name="com.papegames.lysk.cn" />
+
+        <package android:name="com.android.settings" />
+        <package android:name="com.android.soundrecorder" />
+        <package android:name="com.android.chrome" />
+        <package android:name="com.android.deskclock" />
+        <package android:name="com.android.contacts" />
+        <package android:name="com.google.android.calendar" />
+        <package android:name="com.google.android.deskclock" />
+        <package android:name="com.google.android.contacts" />
+        <package android:name="com.android.vending" />
+        <package android:name="com.google.android.apps.maps" />
     </queries>
 
     <application
