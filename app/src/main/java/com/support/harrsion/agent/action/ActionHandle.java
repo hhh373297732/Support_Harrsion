@@ -60,6 +60,8 @@ public class ActionHandle {
                 return _handleTap(action, width, height);
             case "Type":
                 return _handleType(action);
+            case "Swipe":
+                return _handleSwipe(action, width, height);
             default:
                 return ActionResult.builder()
                         .success(true)
@@ -99,6 +101,30 @@ public class ActionHandle {
         }
 
         AccessibilityService.getInstance().clickByXY(local.get(0), local.get(1));
+
+        return ActionResult.builder()
+                .success(true)
+                .shouldFinish(false)
+                .build();
+    }
+
+    private ActionResult _handleSwipe(Map<String, Object> action, int width, int height) {
+        List<Float> start = JSON.parseArray(String.valueOf(action.get("start")), Float.class);
+        List<Float> end = JSON.parseArray(String.valueOf(action.get("end")), Float.class);
+
+        if (start.size() != 2 || end.size() != 2) {
+            return ActionResult.builder()
+                    .success(false)
+                    .shouldFinish(false)
+                    .message("Missing swipe coordinates")
+                    .build();
+        }
+
+        List<Float> startLocal = DeviceUtil.convertRelativeToAbsolute(start, width, height);
+        List<Float> endLocal = DeviceUtil.convertRelativeToAbsolute(end, width, height);
+
+        AccessibilityService.getInstance().swipe(startLocal.get(0), startLocal.get(1),
+                endLocal.get(0), endLocal.get(1), 300);
 
         return ActionResult.builder()
                 .success(true)

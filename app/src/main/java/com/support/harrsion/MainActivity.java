@@ -7,6 +7,7 @@ import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.support.harrsion.service.AgentService;
@@ -24,17 +25,17 @@ public class MainActivity extends Activity {
         // 假设您的布局文件中有一个ID为 btn_start_capture 的按钮
         setContentView(R.layout.activity_main);
 
-        Button startCaptureButton = findViewById(R.id.btn_start_capture);
-        startCaptureButton.setOnClickListener(v -> requestScreenCapturePermission());
-        Button takeScreenshotButton = findViewById(R.id.btn_take_screenshot);
+        mProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+        requestScreenCapturePermission();
+
+        EditText taskInput = findViewById(R.id.task_content);
+
+        Button takeScreenshotButton = findViewById(R.id.btn_start_task);
         takeScreenshotButton.setOnClickListener(v -> {
             Intent intent = new Intent(getApplicationContext(), AgentService.class);
-            intent.putExtra("task", "打开小红书并搜索黄金走势");
+            intent.putExtra("task", taskInput.getText().toString());
             startForegroundService(intent);
         });
-        // 获取 MediaProjectionManager 实例
-        mProjectionManager = (MediaProjectionManager)
-                getSystemService(Context.MEDIA_PROJECTION_SERVICE);
 
         if (!isAccessibilityServiceEnabled(this)) {
             openAccessibilitySettings(this);
@@ -64,7 +65,6 @@ public class MainActivity extends Activity {
      */
     private void requestScreenCapturePermission() {
         if (mProjectionManager != null) {
-            // 这将弹出“允许应用捕获屏幕”的系统对话框
             startActivityForResult(
                     mProjectionManager.createScreenCaptureIntent(),
                     REQUEST_CODE_SCREEN_CAPTURE

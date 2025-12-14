@@ -3,22 +3,84 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#FAFAFA"
+    android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:gravity="center"
-    android:padding="16dp"
+    android:padding="24dp"
     tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/btn_start_capture"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center_vertical|start"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="任务助手"
+            android:textColor="#212121"
+            android:textSize="32sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="ai不允许在当前页面操作"
+            android:textColor="#757575"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="1. 请求授权并启动服务" />
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="32dp"
+        android:background="@android:color/white"
+        android:elevation="4dp"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="任务内容"
+            android:textColor="#555555"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/task_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#EEEEEE"
+            android:gravity="top|start"
+            android:hint="例如：打开小红书搜索川西攻略"
+            android:inputType="textUri|textMultiLine"
+            android:minHeight="100dp"
+            android:padding="12dp"
+            android:textSize="16sp" />
+
+    </LinearLayout>
 
     <Button
-        android:id="@+id/btn_take_screenshot"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="15dp"
-        android:text="2. 执行一次截屏操作" />
+        android:id="@+id/btn_start_task"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:backgroundTint="#FF4555"
+        android:elevation="6dp"
+        android:stateListAnimator="@null"
+        android:text="执行"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
 </LinearLayout>

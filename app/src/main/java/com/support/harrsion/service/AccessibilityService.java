@@ -52,6 +52,32 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
         dispatchGesture(gesture, null, null);
     }
 
+    /**
+     * 滑动屏幕
+     *
+     * @param startX 开始 X 坐标（px）
+     * @param startY 开始 Y 坐标（px）
+     * @param endX   结束 X 坐标（px）
+     * @param endY   结束 Y 坐标（px）
+     * @param duration 滑动时长（毫秒）
+     */
+    public void swipe(float startX, float startY, float endX, float endY, long duration) {
+        Path path = new Path();
+        path.moveTo(startX, startY);
+        path.lineTo(endX, endY);
+
+        GestureDescription.StrokeDescription stroke =
+                new GestureDescription.StrokeDescription(path, 0, duration);
+
+        GestureDescription gesture =
+                new GestureDescription.Builder()
+                        .addStroke(stroke)
+                        .build();
+
+
+        dispatchGesture(gesture, null, null);
+    }
+
     public boolean inputText(String text) {
         AccessibilityNodeInfo focusNode = getRootInActiveWindow();
         if (focusNode == null) return false;
