@@ -86,12 +86,9 @@ public class ScreenCaptureService extends Service {
             String action = intent.getAction();
 
             if (ACTION_SCREENSHOT.equals(action)) {
-                // 🚀 收到截图指令，立即执行截图
-                mHandler.post(this::takeScreenshot);
+                mHandler.postDelayed(this::takeScreenshot, 1500);
                 Log.d(TAG, "收到截图指令并执行。");
-                // 服务保持运行
                 return START_STICKY;
-
             } else {
                 // 第一次启动（收到授权结果）
                 int resultCode = intent.getIntExtra("resultCode", 0);

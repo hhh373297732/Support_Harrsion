@@ -1,6 +1,8 @@
 package com.support.harrsion.agent.utils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -72,25 +74,66 @@ public class MessageParseUtil {
         Map<String, Object> result = new HashMap<>();
         result.put("_metadata", "do");
 
-        // 去除可能的括号
+        if (pythonStr == null || pythonStr.isEmpty()) {
+            return result;
+        }
+
         String str = pythonStr.trim();
         if (str.startsWith("do(") && str.endsWith(")")) {
             str = str.substring(3, str.length() - 1);
         }
 
-        // 分割键值对
-        String[] pairs = str.split(",\\s*");
-
-        for (String pair : pairs) {
+        for (String pair : splitTopLevel(str)) {
             String[] kv = pair.split("=", 2);
-            if (kv.length == 2) {
-                String key = kv[0].trim();
-                String value = kv[1].trim();
+            if (kv.length != 2) continue;
 
-                // 处理不同类型的值
-                Object parsedValue = parsePythonValue(value);
-                result.put(key, parsedValue);
+            String key = kv[0].trim();
+            String value = kv[1].trim();
+
+            result.put(key, parsePythonValue(value));
+        }
+
+        return result;
+    }
+
+    private static List<String> splitTopLevel(String input) {
+        List<String> result = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+
+        int depth = 0;
+        boolean inQuotes = false;
+        char quoteChar = 0;
+
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+
+            // 处理字符串
+            if (c == '"' || c == '\'') {
+                if (inQuotes && c == quoteChar) {
+                    inQuotes = false;
+                } else if (!inQuotes) {
+                    inQuotes = true;
+                    quoteChar = c;
+                }
+                current.append(c);
+                continue;
             }
+
+            if (!inQuotes) {
+                if (c == '[' || c == '(' || c == '{') depth++;
+                else if (c == ']' || c == ')' || c == '}') depth--;
+                else if (c == ',' && depth == 0) {
+                    result.add(current.toString().trim());
+                    current.setLength(0);
+                    continue;
+                }
+            }
+
+            current.append(c);
+        }
+
+        if (current.length() > 0) {
+            result.add(current.toString().trim());
         }
 
         return result;

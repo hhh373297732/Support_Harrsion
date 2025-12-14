@@ -5,15 +5,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.support.harrsion.agent.Agent;
-import com.support.harrsion.agent.utils.DeviceUtil;
-import com.support.harrsion.dto.model.ModelConfig;
+import com.support.harrsion.service.AgentService;
+import com.support.harrsion.service.AccessibilityService;
 import com.support.harrsion.service.ScreenCaptureService;
-
-import java.util.concurrent.Executor;
 
 public class MainActivity extends Activity {
 
@@ -30,17 +28,35 @@ public class MainActivity extends Activity {
         startCaptureButton.setOnClickListener(v -> requestScreenCapturePermission());
         Button takeScreenshotButton = findViewById(R.id.btn_take_screenshot);
         takeScreenshotButton.setOnClickListener(v -> {
-            ModelConfig modelConfig = new ModelConfig();
-            modelConfig.setBaseUrl("https://open.bigmodel.cn/api/paas/v4");
-            modelConfig.setApiKey("af8c20abc40d466ab939c07ca7359912.ZnyCoeosnZYZGQTJ");
-            modelConfig.setModelName("autoglm-phone");
-
-            Agent agent = new Agent(this, modelConfig);
-            agent.run("打开美团app");
+            Intent intent = new Intent(getApplicationContext(), AgentService.class);
+            intent.putExtra("task", "打开小红书并搜索黄金走势");
+            startForegroundService(intent);
         });
         // 获取 MediaProjectionManager 实例
         mProjectionManager = (MediaProjectionManager)
                 getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+
+        if (!isAccessibilityServiceEnabled(this)) {
+            openAccessibilitySettings(this);
+        }
+    }
+
+    public static void openAccessibilitySettings(Context context) {
+        Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intent);
+    }
+
+    public static boolean isAccessibilityServiceEnabled(Context context) {
+        String service = context.getPackageName() + "/" +
+                AccessibilityService.class.getCanonicalName();
+
+        String enabledServices = Settings.Secure.getString(
+                context.getContentResolver(),
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        );
+
+        return enabledServices != null && enabledServices.contains(service);
     }
 
     /**

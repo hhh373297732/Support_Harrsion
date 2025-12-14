@@ -2,13 +2,13 @@ package com.support.harrsion.agent.utils;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Build;
-import android.widget.Toast;
 
 import com.support.harrsion.agent.device.ScreenshotCallback;
 import com.support.harrsion.dto.screenshot.Screenshot;
 import com.support.harrsion.service.ScreenCaptureService;
+
+import java.util.List;
 
 public class DeviceUtil {
 
@@ -33,10 +33,7 @@ public class DeviceUtil {
         sCallback = callback; // 存储回调
 
         Intent serviceIntent = new Intent(context, ScreenCaptureService.class);
-        // 关键：设置 Action 为截图指令
         serviceIntent.setAction(ACTION_SCREENSHOT);
-
-        // 通过 startService 发送指令，如果服务已运行，只会调用 onStartCommand
         context.startForegroundService(serviceIntent);
     }
 
@@ -50,5 +47,12 @@ public class DeviceUtil {
             }
             sCallback = null; // 处理完后清除回调
         }
+    }
+
+    // 计算实际坐标
+    public static List<Float> convertRelativeToAbsolute(List<Float> element, int width, int height) {
+        Float x = element.get(0) / 1000 * width;
+        Float y = element.get(1) / 1000 * height;
+        return List.of(x,y);
     }
 }

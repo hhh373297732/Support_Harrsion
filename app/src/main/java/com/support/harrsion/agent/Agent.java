@@ -70,39 +70,7 @@ public class Agent implements ScreenshotCallback {
 
         // send hi to model to check if it's ready
         this._checkModelApi();
-
-
-        // First step with user prompt
-//        StepResult result = _executeStep(task, true);
-
-//        if (result.getFinished()) {
-//            return Optional.of(result.getMessage()).orElse("Task completed");
-//        }
-//
-//        while (this._stepCount < this.agentConfig.getMaxSteps()) {
-//            result = _executeStep(task, true);
-//
-//            if (result.getFinished()) {
-//                return Optional.of(result.getMessage()).orElse("Task completed");
-//            }
-//        }
-//        return "Max steps reached";
     }
-
-    /**
-     * Execute a single step of the agent.
-     * Useful for manual control or debugging.
-     *
-     * @param task Task description (only needed for first step).
-     * @return StepResult with step details.
-     */
-//    private StepResult step(String task) {
-//        boolean isFirst = this._context.isEmpty();
-//        if (isFirst && StringUtils.isEmpty(task)) {
-//            throw new RuntimeException("Task is required for the first step");
-//        }
-//        return this._executeStep(task, isFirst);
-//    }
 
     /**
      * Reset the agent state for a new task.
@@ -111,46 +79,6 @@ public class Agent implements ScreenshotCallback {
         this._context.clear();
         this._stepCount = 0;
     }
-
-    /**
-     * Execute a single step of the agent loop.
-     *
-     * @param userPrompt
-     * @param isFirst
-     * @return
-     */
-//    private StepResult _executeStep(String userPrompt, boolean isFirst) {
-//        this._stepCount++;
-//
-//        DeviceUtil.triggerScreenshot(this.appContext);
-//        String currentApp = DeviceUtil.getHardwareDeviceName();
-//
-//        String screenInfo = MessageBuilder.buildScreenInfo(currentApp);
-//        if (isFirst) {
-//            this._context.add(MessageBuilder.createSystemMessage(this.agentConfig.getSystemPrompt()));
-//
-//            String textContent = String.format("%s\n\n%s", userPrompt, screenInfo);
-//
-//            this._context.add(MessageBuilder.createUserMessage(
-//                    UserMessageOption.builder().text(textContent).imageBase64(screenshot.getBase64Data()).build()));
-//        } else {
-//            String textContent = String.format("** Screen Info **\n\n%s", screenInfo);
-//
-//            this._context.add(MessageBuilder.createUserMessage(
-//                    UserMessageOption.builder().text(textContent).imageBase64(screenshot.getBase64Data()).build()));
-//        }
-//
-//        // Get model response
-//        ModelResponse response = this.modelClient.request(this._context);
-//
-//        // Parse action from response
-////        action = parse_action(response.action)
-//
-//        return StepResult.builder()
-//                .success(true)
-//                .finished(true)
-//                .build();
-//    }
 
 
     /**
@@ -165,6 +93,9 @@ public class Agent implements ScreenshotCallback {
         DeviceUtil.triggerScreenshot(this.appContext, this);
     }
 
+    /**
+     * 检查模型API是否可用。
+     */
     private void _checkModelApi() {
         this.modelClient.requestAsync(List.of(MessageBuilder.createUserMessage(UserMessageOption
                         .builder()
@@ -216,7 +147,7 @@ public class Agent implements ScreenshotCallback {
         this.modelClient.requestAsync(this._context, new ModelClient.Callback() {
             @Override
             public void onSuccess(ModelResponse response) {
-                Log.d("Agent", "Model Response: " + response.getRawContent());
+//                Log.d("Agent", "Model Response: " + response.getRawContent());
                 Map<String, Object> action = MessageParseUtil.parseAction(response.getAction());
                 if (agentConfig.getVerbose()) {
                     Log.d("Agent", "=".repeat(50));
@@ -254,7 +185,13 @@ public class Agent implements ScreenshotCallback {
                                     : action.getOrDefault("message", "done")
                     ));
                     Log.d("Agent", "=".repeat(50));
+                    return;
                 }
+
+                if (_stepCount < agentConfig.getMaxSteps()) {
+                    _executeStepAsync();
+                }
+
             }
 
             @Override
@@ -263,16 +200,6 @@ public class Agent implements ScreenshotCallback {
             }
         });
 
-        // 3. 解析 Action 并执行
-        // Action action = parse_action(response.action);
-        // StepResult result = execute_action(action);
-
-        // 4. 检查是否完成，如果未完成，继续下一步异步流程
-        // if (!result.getFinished()) {
-        //     this._executeStepAsync(false); // 再次启动异步截图，进入下一轮循环
-        // } else {
-        //    Log.d("Agent", "Task completed: " + result.getMessage());
-        // }
     }
 
     @Override
