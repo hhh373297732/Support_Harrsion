@@ -74,7 +74,8 @@ public class WakeUpService extends Service {
         try {
             porcupineManager = new PorcupineManager.Builder()
                     .setAccessKey(ACCESS_KEY)
-                    .setKeyword(Porcupine.BuiltInKeyword.valueOf("小陈"))
+                    .setKeywordPath("assets/小陈_zh_android_v4_0_0.ppn")
+                    .setModelPath("assets/porcupine_params_zh.pv")
                     .setSensitivity(0.7f).build(
                             getApplicationContext(),
                             porcupineManagerCallback);
