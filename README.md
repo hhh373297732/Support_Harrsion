@@ -11,6 +11,9 @@
 - 智谱autoglm-phone https://docs.bigmodel.cn/cn/api/introduction
 - 其他模型（待测试）
 
+## 模型配置
+可以在AgentService.java文件中对模型baseUrl、apiKey、modelName等参数进行修改
+
 ## 使用说明
 ### 1.软件打开后会自动跳转到手机的无障碍设置页面，拉到最下面选择Support Harrsion，点击进去后系统会提示非应用商店安装的app需要解锁，根据系统提示解锁完后开启软件的无障碍服务即可返回到app页面
 
