@@ -87,7 +87,7 @@ public class ScreenCaptureService extends Service {
 
             if (ACTION_SCREENSHOT.equals(action)) {
                 // todo: 延迟设定防止服务启动过快，图片保存失败，具体时长待优化
-                mHandler.postDelayed(this::takeScreenshot, 1500);
+                mHandler.postDelayed(this::takeScreenshot, 500);
                 Log.d(TAG, "收到截图指令并执行。");
                 return START_STICKY;
             } else {
@@ -155,44 +155,48 @@ public class ScreenCaptureService extends Service {
     private void takeScreenshot() {
         // 确保 ImageReader 有最新的图像
         Image image = mImageReader.acquireLatestImage();
-        if (image == null) {
-            Log.e(TAG, "获取图像失败: Image is null");
-            Toast.makeText(this, "截图失败：请重试", Toast.LENGTH_SHORT).show();
-            stopSelf();
-            return;
-        }
 
-        try {
+        try (image) {
+            if (image == null) {
+                Log.e(TAG, "获取图像失败: Image is null");
+                Toast.makeText(this, "截图失败：请重试", Toast.LENGTH_SHORT).show();
+                stopSelf();
+                return;
+            }
             // 1. 获取图像参数
             int width = image.getWidth();
             int height = image.getHeight();
-            final Image.Plane[] planes = image.getPlanes();
-            final ByteBuffer buffer = planes[0].getBuffer();
-            int pixelStride = planes[0].getPixelStride();
-            int rowStride = planes[0].getRowStride();
-            int rowPadding = rowStride - pixelStride * width;
 
-            // 2. 创建 Bitmap
-            Bitmap bitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height, Bitmap.Config.ARGB_8888);
+            Image.Plane plane = image.getPlanes()[0];
+            ByteBuffer buffer = plane.getBuffer();
+
+            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
             bitmap.copyPixelsFromBuffer(buffer);
 
-            // 3. 裁剪掉可能存在的填充像素
-            if (rowPadding > 0) {
-                bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height);
-            }
+            // 缩放
+            int targetWidth = 720;
+            float scale = targetWidth * 1f / bitmap.getWidth();
+            int targetHeight = (int) (bitmap.getHeight() * scale);
 
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            Bitmap scaled = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true);
+            bitmap.recycle();
+            bitmap = scaled;
 
-            // 压缩为 WEBP 格式 (文件较小，细节损失较少)
-            bitmap.compress(Bitmap.CompressFormat.WEBP, 80, outputStream);
+            // 降低颜色深度（可选）
+            Bitmap rgb565 = bitmap.copy(Bitmap.Config.RGB_565, false);
+            bitmap.recycle();
+            bitmap = rgb565;
 
-            byte[] byteArray = outputStream.toByteArray();
-
-            // 释放 Bitmap 内存
+            // 压缩
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.WEBP, 65, os);
             bitmap.recycle();
 
-            String base64Data = Base64.encodeToString(byteArray, Base64.DEFAULT);
-            Log.d(TAG, "Base64 数据长度: " + base64Data.length());
+            byte[] bytes = os.toByteArray();
+            String base64Data = Base64.encodeToString(bytes, Base64.NO_WRAP);
+
+            Log.d(TAG, "Base64 length: " + base64Data.length());
+
 
             Screenshot screenshot = Screenshot.builder()
                     .base64Data(base64Data)
@@ -204,9 +208,6 @@ public class ScreenCaptureService extends Service {
         } catch (Exception e) {
             Log.e(TAG, "截图处理或保存失败", e);
             DeviceUtil.handleScreenshotResult(null, "截图处理或保存失败");
-        } finally {
-            // **必须关闭 Image** 否则会内存泄漏
-            image.close();
         }
     }
 

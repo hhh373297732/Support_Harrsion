@@ -69,16 +69,16 @@ public class Agent implements DeviceUtil.ScreenshotCallback {
      * @return Final message from the agent.
      */
     public void run(String task) {
-        // init context and step count
         this.reset();
         this._currentTask = task;
 
-        if (initFlag) {
-            this._executeStepAsync();
-        } else {
-            this._checkModelApi();
-            this.initFlag = true;
-        }
+        this._checkModelApi();
+//        if (initFlag) {
+//            this._executeStepAsync();
+//        } else {
+//            this._checkModelApi();
+//            this.initFlag = true;
+//        }
     }
 
     /**
@@ -113,16 +113,20 @@ public class Agent implements DeviceUtil.ScreenshotCallback {
                 , new ModelClient.Callback() {
             @Override
             public void onSuccess(ModelResponse response) {
-                _currentApp = DeviceUtil.getHardwareDeviceName();
-                Log.d("Agent", "✅ Model API checks passed!");
-                Log.d("Agent", "=".repeat(50));
-                Log.d("Agent", "Phone Agent - AI-powered phone automation");
-                Log.d("Agent", "=".repeat(50));
-                Log.d("Agent", "Model：" + modelConfig.getModelName());
-                Log.d("Agent", "Base URL：" + modelConfig.getBaseUrl());
-                Log.d("Agent", "Max Steps：" + agentConfig.getMaxSteps());
-                Log.d("Agent", "Device：" + _currentApp);
-                Log.d("Agent", "=".repeat(50));
+                if (_currentApp == null) {
+                    _currentApp = DeviceUtil.getHardwareDeviceName();
+                }
+                if (agentConfig.getVerbose()) {
+                    Log.d("Agent", "✅ Model API checks passed!");
+                    Log.d("Agent", "=".repeat(50));
+                    Log.d("Agent", "Phone Agent - AI-powered phone automation");
+                    Log.d("Agent", "=".repeat(50));
+                    Log.d("Agent", "Model：" + modelConfig.getModelName());
+                    Log.d("Agent", "Base URL：" + modelConfig.getBaseUrl());
+                    Log.d("Agent", "Max Steps：" + agentConfig.getMaxSteps());
+                    Log.d("Agent", "Device：" + _currentApp);
+                    Log.d("Agent", "=".repeat(50));
+                }
                 _executeStepAsync();
             }
 

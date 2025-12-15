@@ -58,7 +58,7 @@
             android:layout_height="wrap_content"
             android:background="#EEEEEE"
             android:gravity="top|start"
-            android:hint="例如：打开小红书搜索川西攻略"
+            android:hint="打开美团去超市购买牛肉和白菜"
             android:inputType="textUri|textMultiLine"
             android:minHeight="100dp"
             android:padding="12dp"

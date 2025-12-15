@@ -35,7 +35,7 @@ public class ActionHandle {
      * 执行操作
      *
      * @param action 操作
-     * @param width 屏幕宽度
+     * @param width  屏幕宽度
      * @param height 屏幕高度
      * @return ActionResult
      */
@@ -66,10 +66,10 @@ public class ActionHandle {
     /**
      * 获取操作处理器
      *
-     * @param action 操作
+     * @param action     操作
      * @param actionName 操作名称
-     * @param width 屏幕宽度
-     * @param height 屏幕高度
+     * @param width      屏幕宽度
+     * @param height     屏幕高度
      * @return ActionResult
      */
     private ActionResult _getHandler(Map<String, Object> action, String actionName, int width, int height) {
@@ -88,6 +88,10 @@ public class ActionHandle {
                 return _handleBack();
             case "Home":
                 return _handleHome();
+            case "Wait":
+                return _handleWait(action);
+            case "Take_over":
+                return _handleTakeOver();
             default:
                 return ActionResult.builder()
                         .success(true)
@@ -128,7 +132,7 @@ public class ActionHandle {
      * 处理点击操作
      *
      * @param action 操作
-     * @param width 屏幕宽度
+     * @param width  屏幕宽度
      * @param height 屏幕高度
      * @return ActionResult
      */
@@ -163,7 +167,7 @@ public class ActionHandle {
      * 处理双击操作
      *
      * @param action 操作
-     * @param width 屏幕宽度
+     * @param width  屏幕宽度
      * @param height 屏幕高度
      * @return ActionResult
      */
@@ -263,6 +267,51 @@ public class ActionHandle {
      */
     private ActionResult _handleHome() {
         ActionService.getInstance().goHome();
+        return ActionResult.builder()
+                .success(true)
+                .shouldFinish(false)
+                .build();
+    }
+
+    /**
+     * 处理等待操作
+     *
+     * @return ActionResult
+     */
+    private ActionResult _handleWait(Map<String, Object> action) {
+        // 默认等待一秒
+        long duration = 1000;
+        if (action.containsKey("duration")) {
+            duration = Long.parseLong(String.valueOf(action.get("duration"))
+                    .replace("seconds", "").trim());
+        }
+
+        try {
+            Thread.sleep(duration);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return ActionResult.builder()
+                .success(true)
+                .shouldFinish(false)
+                .build();
+    }
+
+    /**
+     * 处理挂起操作
+     *
+     * @return ActionResult
+     */
+    private ActionResult _handleTakeOver() {
+        // 等待1.5秒处理验证码
+        long duration = 1500;
+        try {
+            Thread.sleep(duration);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         return ActionResult.builder()
                 .success(true)
                 .shouldFinish(false)
