@@ -5,7 +5,6 @@ import android.util.Log;
 import com.alibaba.fastjson2.JSON;
 import com.openai.models.chat.completions.ChatCompletionMessageParam;
 import com.support.harrsion.agent.action.ActionHandle;
-import com.support.harrsion.agent.device.ScreenshotCallback;
 import com.support.harrsion.agent.model.MessageBuilder;
 import com.support.harrsion.agent.model.ModelClient;
 import com.support.harrsion.agent.utils.DeviceUtil;
@@ -22,7 +21,13 @@ import java.util.List;
 import java.util.Map;
 
 
-public class Agent implements ScreenshotCallback {
+/**
+ * Agent 处理器
+ *
+ * @author harrsion
+ * @date 2025/12/15
+ */
+public class Agent implements DeviceUtil.ScreenshotCallback {
 
     private final AgentConfig agentConfig;
     private final ModelConfig modelConfig;
@@ -128,6 +133,11 @@ public class Agent implements ScreenshotCallback {
         });
     }
 
+    /**
+     * 截图回调处理
+     *
+     * @param screenshot 包含 Base64 数据的截图对象
+     */
     @Override
     public void onScreenshotReady(Screenshot screenshot) {
         this._stepCount++;
@@ -167,8 +177,10 @@ public class Agent implements ScreenshotCallback {
                 _context.set(_context.size() - 1, MessageBuilder
                         .removeImagesFromMessage(_context.get(_context.size() - 1)));
 
+                // 执行动作
                 ActionResult result = actionHandle.execute(action, screenshot.getWidth(), screenshot.getHeight());
 
+                // 添加思考和操作上下文
                 _context.add(MessageBuilder.createAssistantMessage(
                         String.format("<think>%s</think><answer>%s</answer>",
                                 response.getThinking(), response.getAction())));
@@ -207,6 +219,11 @@ public class Agent implements ScreenshotCallback {
 
     }
 
+    /**
+     * 截图失败处理
+     *
+     * @param error
+     */
     @Override
     public void onScreenshotFailed(String error) {
         Log.e("Agent", "Screenshot failed: " + error);

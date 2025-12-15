@@ -4,6 +4,12 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * 系统提示词，基于auto-glm项目实现
+ *
+ * @author harrsion
+ * @date 2025/12/15
+ */
 public interface Prompts {
 
     static String buildSystemPrompt() {

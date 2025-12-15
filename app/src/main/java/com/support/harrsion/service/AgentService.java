@@ -13,8 +13,16 @@ import androidx.core.app.NotificationCompat;
 
 import com.support.harrsion.R;
 import com.support.harrsion.agent.Agent;
+import com.support.harrsion.agent.utils.DeviceUtil;
 import com.support.harrsion.dto.model.ModelConfig;
 
+/**
+ * Agent服务
+ *
+ * @describe 挂在后台，避免跳转到第三方app的时候任务无法继续运行
+ * @author harrsion
+ * @date 2025/12/15
+ */
 public class AgentService extends Service {
 
     private static final int AGENT_ID = 110;
@@ -23,8 +31,10 @@ public class AgentService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        createNotificationChannel();
-        startForeground(AGENT_ID, buildNotification());
+        DeviceUtil.createNotificationChannel(this, "agent", "Agent Service");
+        Notification notification = DeviceUtil.buildNotification(this, "agent",
+                "Agent Running", "AI automation in progress");
+        startForeground(AGENT_ID, notification);
 
         ModelConfig modelConfig = new ModelConfig();
         modelConfig.setBaseUrl("https://open.bigmodel.cn/api/paas/v4");
@@ -44,23 +54,5 @@ public class AgentService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
-    }
-
-    private void createNotificationChannel() {
-        NotificationChannel channel = new NotificationChannel(
-                "agent",
-                "Agent Service",
-                NotificationManager.IMPORTANCE_LOW
-        );
-        NotificationManager manager = getSystemService(NotificationManager.class);
-        manager.createNotificationChannel(channel);
-    }
-
-    private Notification buildNotification() {
-        return new NotificationCompat.Builder(this, "agent")
-                .setContentTitle("Agent Running")
-                .setContentText("AI automation in progress")
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .build();
     }
 }

@@ -1,8 +1,6 @@
 package com.support.harrsion.service;
 
 import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -14,7 +12,6 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
-import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -25,16 +22,18 @@ import android.view.Display;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-import com.support.harrsion.R;
 import com.support.harrsion.agent.utils.DeviceUtil;
 import com.support.harrsion.dto.screenshot.Screenshot;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
-import java.util.Date;
 
+/**
+ * 屏幕截图服务
+ *
+ * @author harrsion
+ * @date 2025/12/15
+ */
 public class ScreenCaptureService extends Service {
 
     private static final String TAG = "ScreenCaptureService";
@@ -75,8 +74,9 @@ public class ScreenCaptureService extends Service {
         mHandler = new Handler(Looper.getMainLooper());
 
         // 4. 启动前台服务通知
-        createNotificationChannel();
-        Notification notification = buildNotification();
+        DeviceUtil.createNotificationChannel(this, NOTIFICATION_CHANNEL_ID, "屏幕截图服务");
+        Notification notification = DeviceUtil.buildNotification(this, NOTIFICATION_CHANNEL_ID,
+                "屏幕捕获正在运行", "您的屏幕内容正在被应用捕获。");
         startForeground(NOTIFICATION_ID, notification);
     }
 
@@ -86,6 +86,7 @@ public class ScreenCaptureService extends Service {
             String action = intent.getAction();
 
             if (ACTION_SCREENSHOT.equals(action)) {
+                // todo: 延迟设定防止服务启动过快，图片保存失败，具体时长待优化
                 mHandler.postDelayed(this::takeScreenshot, 1500);
                 Log.d(TAG, "收到截图指令并执行。");
                 return START_STICKY;
@@ -182,8 +183,7 @@ public class ScreenCaptureService extends Service {
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-            // 压缩为 PNG 格式 (无损且支持透明度，推荐用于截图)
-            // 如果对文件大小要求更高，可以使用 JPEG，但会损失画质。
+            // 压缩为 WEBP 格式 (文件较小，细节损失较少)
             bitmap.compress(Bitmap.CompressFormat.WEBP, 80, outputStream);
 
             byte[] byteArray = outputStream.toByteArray();
@@ -211,26 +211,6 @@ public class ScreenCaptureService extends Service {
     }
 
     /**
-     * 将 Bitmap 保存到公共 Pictures 目录。
-     */
-    private void saveBitmap(Bitmap bitmap) {
-        String filename = "Screenshot_" + new Date().getTime() + ".png";
-        File dir = getExternalFilesDir(null); // 示例：保存到 App 的私有外部存储
-        // 实际应用中，您可能需要保存到公共目录，那需要处理 Android Q+ 的 Scoped Storage
-        File file = new File(dir, filename);
-
-        try (FileOutputStream out = new FileOutputStream(file)) {
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-            out.flush();
-            mHandler.post(() -> Toast.makeText(getApplicationContext(), "截图成功，保存到: " + file.getAbsolutePath(), Toast.LENGTH_LONG).show());
-            Log.i(TAG, "截图保存成功: " + file.getAbsolutePath());
-        } catch (Exception e) {
-            Log.e(TAG, "保存文件失败", e);
-            mHandler.post(() -> Toast.makeText(getApplicationContext(), "保存截图失败", Toast.LENGTH_SHORT).show());
-        }
-    }
-
-    /**
      * 释放所有 MediaProjection 相关的资源。
      */
     private void tearDownMediaProjection() {
@@ -253,31 +233,5 @@ public class ScreenCaptureService extends Service {
     public void onDestroy() {
         super.onDestroy();
         tearDownMediaProjection();
-    }
-
-    // --- 前台通知相关代码 ---
-
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel serviceChannel = new NotificationChannel(
-                    NOTIFICATION_CHANNEL_ID,
-                    "屏幕捕获服务",
-                    NotificationManager.IMPORTANCE_LOW
-            );
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(serviceChannel);
-        }
-    }
-
-    private Notification buildNotification() {
-        // 可以在这里添加一个指向 MainActivity 的 PendingIntent
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            return new Notification.Builder(this, NOTIFICATION_CHANNEL_ID)
-                    .setContentTitle("屏幕捕获正在运行")
-                    .setContentText("您的屏幕内容正在被应用捕获。")
-                    .setSmallIcon(R.drawable.ic_launcher_foreground) // 替换为你的应用图标
-                    .build();
-        }
-        return null;
     }
 }

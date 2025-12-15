@@ -1,5 +1,11 @@
 package com.support.harrsion.config;
 
+/**
+ * app包名枚举
+ *
+ * @author harrsion
+ * @date 2025/12/15
+ */
 public enum AppPackage {
     // --- Social & Communications ---
     WECHAT("微信", "com.tencent.mm"),
