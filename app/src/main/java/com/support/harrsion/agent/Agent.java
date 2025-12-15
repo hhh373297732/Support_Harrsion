@@ -178,6 +178,12 @@ public class Agent implements DeviceUtil.ScreenshotCallback {
                 // 执行动作
                 ActionResult result = actionHandle.execute(action, screenshot.getWidth(), screenshot.getHeight());
 
+                try{
+                    Thread.sleep(500);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
                 // 添加思考和操作上下文
                 _context.add(MessageBuilder.createAssistantMessage(
                         String.format("<think>%s</think><answer>%s</answer>",

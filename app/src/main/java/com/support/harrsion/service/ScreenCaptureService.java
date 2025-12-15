@@ -164,44 +164,10 @@ public class ScreenCaptureService extends Service {
         try (image) {
             if (image == null) {
                 Log.e(TAG, "获取图像失败: Image is null");
-                Toast.makeText(this, "截图失败：请重试", Toast.LENGTH_SHORT).show();
+                mHandler.post(() -> Toast.makeText(getApplicationContext(), "截图失败：请重试", Toast.LENGTH_SHORT).show());
                 stopSelf();
                 return;
             }
-//            // 1. 获取图像参数
-//            int width = image.getWidth();
-//            int height = image.getHeight();
-//
-//            Image.Plane plane = image.getPlanes()[0];
-//            ByteBuffer buffer = plane.getBuffer();
-//
-//            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-//            bitmap.copyPixelsFromBuffer(buffer);
-//
-//            // 缩放
-//            int targetWidth = 720;
-//            float scale = targetWidth * 1f / bitmap.getWidth();
-//            int targetHeight = (int) (bitmap.getHeight() * scale);
-//
-//            Bitmap scaled = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true);
-//            bitmap.recycle();
-//            bitmap = scaled;
-//
-//            // 降低颜色深度（可选）
-//            Bitmap rgb565 = bitmap.copy(Bitmap.Config.RGB_565, false);
-//            bitmap.recycle();
-//            bitmap = rgb565;
-//
-//            // 压缩
-//            ByteArrayOutputStream os = new ByteArrayOutputStream();
-//            bitmap.compress(Bitmap.CompressFormat.WEBP, 65, os);
-//            bitmap.recycle();
-//
-//            byte[] bytes = os.toByteArray();
-//            String base64Data = Base64.encodeToString(bytes, Base64.NO_WRAP);
-//
-//            Log.d(TAG, "Base64 length: " + base64Data.length());
-
 
             int width = image.getWidth();
             int height = image.getHeight();
