@@ -20,8 +20,6 @@ import com.support.harrsion.dto.model.ModelConfig;
  * @date 2025/12/15
  */
 public class AgentService extends Service {
-
-    private static final int AGENT_ID = 110;
     private Agent agent;
 
     @Override
@@ -30,7 +28,7 @@ public class AgentService extends Service {
         DeviceUtil.createNotificationChannel(this, "agent", "Agent Service");
         Notification notification = DeviceUtil.buildNotification(this, "agent",
                 "Agent Running", "AI automation in progress");
-        startForeground(AGENT_ID, notification);
+        startForeground(AppConfig.Foreground.AGENT_SERVICE_ID, notification);
 
         ModelConfig modelConfig = new ModelConfig();
         modelConfig.setBaseUrl(AppConfig.Model.baseUrl);

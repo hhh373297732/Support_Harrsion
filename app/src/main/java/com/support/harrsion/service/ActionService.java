@@ -2,7 +2,6 @@ package com.support.harrsion.service;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
-import android.annotation.SuppressLint;
 import android.graphics.Path;
 import android.os.Bundle;
 import android.view.accessibility.AccessibilityEvent;

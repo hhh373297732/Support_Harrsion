@@ -25,6 +25,7 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.support.harrsion.agent.utils.DeviceUtil;
+import com.support.harrsion.config.AppConfig;
 import com.support.harrsion.dto.screenshot.Screenshot;
 
 import java.io.ByteArrayOutputStream;
@@ -39,8 +40,6 @@ import java.nio.ByteBuffer;
 public class ScreenCaptureService extends Service {
 
     private static final String TAG = "ScreenCaptureService";
-    private static final int NOTIFICATION_ID = 101;
-    private static final String NOTIFICATION_CHANNEL_ID = "ScreenCaptureChannel";
     private static final String ACTION_SCREENSHOT = "com.support.harrsion.ACTION_SCREENSHOT";
 
     private MediaProjectionManager mProjectionManager;
@@ -79,10 +78,12 @@ public class ScreenCaptureService extends Service {
         mHandler = new Handler(Looper.getMainLooper());
 
         // 4. 启动前台服务通知
-        DeviceUtil.createNotificationChannel(this, NOTIFICATION_CHANNEL_ID, "屏幕截图服务");
-        Notification notification = DeviceUtil.buildNotification(this, NOTIFICATION_CHANNEL_ID,
-                "屏幕捕获正在运行", "您的屏幕内容正在被应用捕获。");
-        startForeground(NOTIFICATION_ID, notification);
+        DeviceUtil.createNotificationChannel(this,
+                AppConfig.Channel.SCREEN_SHOT_SERVICE_CHANNEL, "屏幕截图服务");
+        Notification notification = DeviceUtil.buildNotification(this,
+                AppConfig.Channel.SCREEN_SHOT_SERVICE_CHANNEL, "屏幕截图服务",
+                "您的屏幕内容正在被应用捕获。");
+        startForeground(AppConfig.Foreground.SCREEN_SHOT_SERVICE_ID, notification);
     }
 
     @Override
@@ -241,6 +242,15 @@ public class ScreenCaptureService extends Service {
             DeviceUtil.handleScreenshotResult(screenshot, null);
         } catch (Exception e) {
             Log.e(TAG, "截图处理或保存失败", e);
+            if (rawBitmap != null) {
+                rawBitmap.recycle();
+            }
+            if (finalBitmap != null) {
+                finalBitmap.recycle();
+            }
+            if (image != null) {
+                image.close();
+            }
             DeviceUtil.handleScreenshotResult(null, "截图处理或保存失败");
         }
     }
