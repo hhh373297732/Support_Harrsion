@@ -8,10 +8,16 @@ import lombok.Data;
 public class AgentConfig {
 
     private int maxSteps = 100;
-    private String systemPrompt;
     private Boolean verbose = true;
+    private String systemPrompt;
 
     public AgentConfig() {
+        this.systemPrompt = Prompts.buildSystemPrompt();
+    }
+
+    public AgentConfig(int maxSteps, Boolean verbose) {
+        this.verbose = verbose;
+        this.maxSteps = maxSteps;
         this.systemPrompt = Prompts.buildSystemPrompt();
     }
 }

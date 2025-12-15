@@ -9,6 +9,7 @@ import com.support.harrsion.agent.model.MessageBuilder;
 import com.support.harrsion.agent.model.ModelClient;
 import com.support.harrsion.agent.utils.DeviceUtil;
 import com.support.harrsion.agent.utils.MessageParseUtil;
+import com.support.harrsion.config.AppConfig;
 import com.support.harrsion.dto.action.ActionResult;
 import com.support.harrsion.dto.agent.AgentConfig;
 import com.support.harrsion.dto.model.ModelConfig;
@@ -44,7 +45,7 @@ public class Agent implements DeviceUtil.ScreenshotCallback {
     public Agent(Context context, ModelConfig modelConfig) {
         this.appContext = context;
         this.modelConfig = modelConfig;
-        this.agentConfig = new AgentConfig();
+        this.agentConfig = new AgentConfig(AppConfig.Agent.maxSteps, AppConfig.Agent.verbose);
         this._init();
     }
 

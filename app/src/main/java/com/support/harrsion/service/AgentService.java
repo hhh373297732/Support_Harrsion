@@ -1,19 +1,15 @@
 package com.support.harrsion.service;
 
 import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Intent;
-import android.os.Build;
 import android.os.IBinder;
 
 import androidx.annotation.Nullable;
-import androidx.core.app.NotificationCompat;
 
-import com.support.harrsion.R;
 import com.support.harrsion.agent.Agent;
 import com.support.harrsion.agent.utils.DeviceUtil;
+import com.support.harrsion.config.AppConfig;
 import com.support.harrsion.dto.model.ModelConfig;
 
 /**
@@ -37,9 +33,9 @@ public class AgentService extends Service {
         startForeground(AGENT_ID, notification);
 
         ModelConfig modelConfig = new ModelConfig();
-        modelConfig.setBaseUrl("https://open.bigmodel.cn/api/paas/v4");
-        modelConfig.setApiKey("af8c20abc40d466ab939c07ca7359912.ZnyCoeosnZYZGQTJ");
-        modelConfig.setModelName("autoglm-phone");
+        modelConfig.setBaseUrl(AppConfig.Model.baseUrl);
+        modelConfig.setApiKey(AppConfig.Model.apiKey);
+        modelConfig.setModelName(AppConfig.Model.modelName);
         agent = new Agent(getApplicationContext(), modelConfig);
     }
 
