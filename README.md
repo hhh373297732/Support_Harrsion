@@ -8,7 +8,7 @@
 - java11+
 
 ## 支持模型
-- 智谱autoglm-phone
+- 智谱autoglm-phone https://docs.bigmodel.cn/cn/api/introduction
 - 其他模型（待测试）
 
 ## 使用说明
