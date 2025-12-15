@@ -28,3 +28,5 @@
 
 ![1e1d8b5345d337fd1123ebc371eb95ed](https://github.com/user-attachments/assets/45e6a9c8-2bfb-45cd-89e2-e9656cb73716)
 
+## 友情链接
+Open-AutoGLM https://github.com/zai-org/Open-AutoGLM
