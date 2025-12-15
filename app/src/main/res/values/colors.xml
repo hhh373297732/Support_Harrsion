@@ -1,5 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Doubao style colors -->
+    <color name="doubao_primary">#4A90E2</color>
+    <color name="doubao_primary_light">#E6F2FF</color>
+    <color name="doubao_primary_dark">#357ABD</color>
+    <color name="doubao_secondary">#FF6B6B</color>
+    <color name="doubao_background">#FFFFFF</color>
+    <color name="doubao_card">#FFFFFF</color>
+    <color name="doubao_text_primary">#2C3E50</color>
+    <color name="doubao_text_secondary">#7F8C8D</color>
+    <color name="doubao_text_hint">#BDC3C7</color>
+    <color name="doubao_border">#E1E8ED</color>
+    <color name="doubao_button">#4A90E2</color>
+    <color name="doubao_button_hover">#357ABD</color>
+    <color name="doubao_avatar_background">#E6F2FF</color>
+    <color name="doubao_input_background">#F5F7FA</color>
+    
+    <!-- Original colors -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>

@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.SupportHarrsion" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.SupportHarrsion" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/doubao_background</item>
+        <item name="android:colorPrimary">@color/doubao_primary</item>
+        <item name="android:colorPrimaryDark">@color/doubao_primary_dark</item>
+        <item name="android:colorAccent">@color/doubao_secondary</item>
+        <item name="android:textColorPrimary">@color/doubao_text_primary</item>
+        <item name="android:textColorSecondary">@color/doubao_text_secondary</item>
+    </style>
 </resources>

@@ -1,86 +1,335 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FAFAFA"
-    android:gravity="center_horizontal"
-    android:orientation="vertical"
-    android:padding="24dp"
+    android:background="@color/doubao_background"
     tools:context=".MainActivity">
 
-    <LinearLayout
+    <!-- Main Content -->
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:gravity="center_vertical|start"
-        android:orientation="vertical">
+        android:layout_height="match_parent">
 
-        <TextView
+    <!-- Top Navigation Bar -->
+    <LinearLayout
+        android:id="@+id/top_nav_bar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@android:color/white"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:gravity="center_vertical">
+
+        <!-- Session History Drawer Button -->
+        <ImageView
+            android:id="@+id/btn_session_history"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_menu"
+            android:layout_marginRight="16dp"
+            android:contentDescription="会话历史"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?android:attr/selectableItemBackground" />
+
+        <!-- Avatar and Title -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center_vertical">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+
+
+            </LinearLayout>
+
+
+        </LinearLayout>
+
+        <!-- Right Action Buttons -->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="任务助手"
-            android:textColor="#212121"
-            android:textSize="32sp"
-            android:textStyle="bold" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="ai不允许在当前页面操作"
-            android:textColor="#757575"
-            android:textSize="16sp" />
+            <!-- New Session Button -->
+            <Button
+                android:id="@+id/btn_new_session"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:background="@drawable/input_background"
+                android:text="新会话"
+                android:textColor="@color/doubao_text_primary"
+                android:textSize="14sp"
+                android:textAllCaps="false"
+                android:layout_marginRight="16dp" />
+
+        </LinearLayout>
     </LinearLayout>
 
-    <LinearLayout
+    <!-- Main Content Area -->
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="32dp"
-        android:background="@android:color/white"
-        android:elevation="4dp"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_height="match_parent"
+        android:layout_below="@id/top_nav_bar"
+        android:layout_above="@+id/bottom_function_bar"
+        android:padding="16dp"
+        android:fillViewport="true">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:text="任务内容"
-            android:textColor="#555555"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center_vertical">
+
+            <!-- Messages Container -->
+            <LinearLayout
+                android:id="@+id/messages_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp" />
+
+            <!-- Welcome Area (will be hidden when messages are sent) -->
+            <LinearLayout
+                android:id="@+id/welcome_area"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:paddingVertical="32dp">
+
+                <!-- Large Avatar -->
+                <LinearLayout
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:background="@drawable/rounded_avatar_large"
+                    android:gravity="center"
+                    android:layout_marginVertical="24dp"
+                    android:elevation="4dp">
+
+                    <ImageView
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:src="@drawable/ic_avatar_large"
+                        android:background="@android:color/white"
+                        android:padding="8dp"
+                        android:contentDescription="豆包头像" />
+                </LinearLayout>
+
+                <!-- Welcome Message -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="我是豆包，能为你提供各种精准的信息和帮助哦。"
+                    android:textColor="@color/doubao_text_primary"
+                    android:textSize="16sp"
+                    android:lineSpacingExtra="4dp"
+                    android:gravity="center"
+                    android:layout_marginBottom="16dp"
+                    android:paddingHorizontal="24dp" />
+
+                <!-- Prompt Words Area -->
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none"
+                    android:layout_marginBottom="32dp"
+                    android:paddingHorizontal="16dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:text="打开小红书搜索川西攻略"
+                            android:textColor="@color/doubao_text_primary"
+                            android:textSize="14sp"
+                            android:background="@drawable/input_background"
+                            android:paddingHorizontal="16dp"
+                            android:gravity="center"
+                            android:layout_marginRight="12dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?android:attr/selectableItemBackground" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:text="帮我写一个生日祝福"
+                            android:textColor="@color/doubao_text_primary"
+                            android:textSize="14sp"
+                            android:background="@drawable/input_background"
+                            android:paddingHorizontal="16dp"
+                            android:gravity="center"
+                            android:layout_marginRight="12dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?android:attr/selectableItemBackground" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:text="推荐一部悬疑电影"
+                            android:textColor="@color/doubao_text_primary"
+                            android:textSize="14sp"
+                            android:background="@drawable/input_background"
+                            android:paddingHorizontal="16dp"
+                            android:gravity="center"
+                            android:layout_marginRight="12dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?android:attr/selectableItemBackground" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:text="今天天气怎么样"
+                            android:textColor="@color/doubao_text_primary"
+                            android:textSize="14sp"
+                            android:background="@drawable/input_background"
+                            android:paddingHorizontal="16dp"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?android:attr/selectableItemBackground" />
+                    </LinearLayout>
+                </HorizontalScrollView>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Bottom Input Area -->
+    <LinearLayout
+        android:id="@+id/bottom_function_bar"
+        android:layout_width="match_parent"
+        android:layout_height="66dp"
+        android:background="@android:color/white"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:gravity="center_vertical"
+        android:elevation="4dp">
 
         <EditText
-            android:id="@+id/task_content"
+            android:id="@+id/input_text"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:background="@drawable/input_background"
+            android:hint="输入内容..."
+            android:textColor="@color/doubao_text_primary"
+            android:textColorHint="@color/doubao_text_secondary"
+            android:textSize="16sp"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp"
+            android:layout_marginRight="12dp"
+            android:inputType="text"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:focusedByDefault="true" 
+            android:imeOptions="actionSend"
+            android:singleLine="true" />
+
+        <Button
+            android:id="@+id/btn_send"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:background="@drawable/input_background"
+            android:text="发送"
+            android:textColor="@color/doubao_text_primary"
+            android:textSize="14sp"
+            android:textAllCaps="false" />
+    </LinearLayout>
+
+</RelativeLayout>
+
+    <!-- Session History Drawer -->
+    <LinearLayout
+        android:id="@+id/drawer_session_history"
+        android:layout_width="280dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="@android:color/white"
+        android:orientation="vertical"
+        android:elevation="4dp">
+
+        <!-- Drawer Header -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#EEEEEE"
-            android:gravity="top|start"
-            android:hint="例如：打开小红书搜索川西攻略"
-            android:inputType="textUri|textMultiLine"
-            android:minHeight="100dp"
-            android:padding="12dp"
-            android:textSize="16sp" />
+            android:layout_height="64dp"
+            android:background="@android:color/white"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:gravity="center_vertical"
+            android:elevation="2dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="会话历史"
+                android:textColor="@color/doubao_text_primary"
+                android:textSize="18sp"
+                android:fontFamily="sans-serif-medium" />
+
+        </LinearLayout>
+
+        <!-- Session History List -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <!-- Empty State -->
+                <ImageView
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:src="@android:drawable/ic_dialog_info"
+                    android:layout_marginVertical="24dp"
+                    android:alpha="0.5" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="暂无会话历史"
+                    android:textColor="@color/doubao_text_secondary"
+                    android:textSize="16sp"
+                    android:gravity="center"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="开始新会话来添加历史记录"
+                    android:textColor="@color/doubao_text_secondary"
+                    android:textSize="14sp"
+                    android:gravity="center"
+                    android:lineSpacingExtra="4dp" />
+
+            </LinearLayout>
+
+        </ScrollView>
 
     </LinearLayout>
 
-    <Button
-        android:id="@+id/btn_start_task"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:backgroundTint="#FF4555"
-        android:elevation="6dp"
-        android:stateListAnimator="@null"
-        android:text="执行"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
-        android:textStyle="bold" />
-
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
-</LinearLayout>
+</androidx.drawerlayout.widget.DrawerLayout>
