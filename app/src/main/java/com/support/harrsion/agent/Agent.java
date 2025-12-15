@@ -40,7 +40,6 @@ public class Agent implements DeviceUtil.ScreenshotCallback {
     private String _currentTask;
     private String _currentApp;
     private ActionHandle actionHandle;
-    private Boolean initFlag = false;
 
     public Agent(Context context, ModelConfig modelConfig) {
         this.appContext = context;
@@ -73,12 +72,6 @@ public class Agent implements DeviceUtil.ScreenshotCallback {
         this._currentTask = task;
 
         this._checkModelApi();
-//        if (initFlag) {
-//            this._executeStepAsync();
-//        } else {
-//            this._checkModelApi();
-//            this.initFlag = true;
-//        }
     }
 
     /**
@@ -86,6 +79,7 @@ public class Agent implements DeviceUtil.ScreenshotCallback {
      */
     private void reset() {
         this._context.clear();
+        this._context.add(MessageBuilder.createSystemMessage(this.agentConfig.getSystemPrompt()));
         this._stepCount = 0;
     }
 
@@ -106,10 +100,8 @@ public class Agent implements DeviceUtil.ScreenshotCallback {
      * 检查模型API是否可用。
      */
     private void _checkModelApi() {
-        this.modelClient.requestAsync(List.of(MessageBuilder.createUserMessage(UserMessageOption
-                        .builder()
-                        .text("Hi,回复一个ok")
-                        .build()))
+        this.modelClient.requestAsync(List.of(MessageBuilder
+                        .createUserMessage(UserMessageOption.builder().text("Hi,回复一个ok").build()))
                 , new ModelClient.Callback() {
             @Override
             public void onSuccess(ModelResponse response) {
@@ -151,16 +143,17 @@ public class Agent implements DeviceUtil.ScreenshotCallback {
 
         String screenInfo = MessageBuilder.buildScreenInfo(this._currentApp);
 
+        String textContent;
         if (isFirst) {
-            this._context.add(MessageBuilder.createSystemMessage(this.agentConfig.getSystemPrompt()));
-            String textContent = String.format("%s\n\n%s", this._currentTask, screenInfo);
-            this._context.add(MessageBuilder.createUserMessage(
-                    UserMessageOption.builder().text(textContent).imageBase64(screenshot.getBase64Data()).build()));
+            textContent = String.format("%s\n\n%s", this._currentTask, screenInfo);
         } else {
-            String textContent = String.format("** Screen Info **\n\n%s", screenInfo);
-            this._context.add(MessageBuilder.createUserMessage(
-                    UserMessageOption.builder().text(textContent).imageBase64(screenshot.getBase64Data()).build()));
+            textContent = String.format("** Screen Info **\n\n%s", screenInfo);
         }
+        this._context.add(MessageBuilder.createUserMessage(
+                UserMessageOption.builder()
+                        .text(textContent)
+                        .imageBase64(screenshot.getBase64Data())
+                        .build()));
 
         this.modelClient.requestAsync(this._context, new ModelClient.Callback() {
             @Override
