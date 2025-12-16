@@ -17,6 +17,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * 操作处理器
+ *
+ * @author harrsion
+ * @date 2025/12/15
+ */
 public class ActionHandle {
 
     private final Context context;
@@ -25,7 +31,16 @@ public class ActionHandle {
         this.context = context;
     }
 
+    /**
+     * 执行操作
+     *
+     * @param action 操作
+     * @param width  屏幕宽度
+     * @param height 屏幕高度
+     * @return ActionResult
+     */
     public ActionResult execute(Map<String, Object> action, int width, int height) {
+        // 获取操作类型，当前项目主要引用的autoglm-phone模型，处理的数据结构也是基于该模型的返回
         String actionType = String.valueOf(action.get("_metadata"));
         if (actionType.equals("finish")) {
             return ActionResult.builder()
@@ -48,6 +63,15 @@ public class ActionHandle {
 
     }
 
+    /**
+     * 获取操作处理器
+     *
+     * @param action     操作
+     * @param actionName 操作名称
+     * @param width      屏幕宽度
+     * @param height     屏幕高度
+     * @return ActionResult
+     */
     private ActionResult _getHandler(Map<String, Object> action, String actionName, int width, int height) {
         switch (actionName) {
             case "Launch":
@@ -64,6 +88,10 @@ public class ActionHandle {
                 return _handleBack();
             case "Home":
                 return _handleHome();
+            case "Wait":
+                return _handleWait(action);
+            case "Take_over":
+                return _handleTakeOver();
             default:
                 return ActionResult.builder()
                         .success(true)
@@ -73,6 +101,12 @@ public class ActionHandle {
         }
     }
 
+    /**
+     * 处理启动操作
+     *
+     * @param action 操作
+     * @return ActionResult
+     */
     private ActionResult _handleLaunch(Map<String, Object> action) {
         String appName = String.valueOf(action.get("app"));
         if (appName.isEmpty())
@@ -94,6 +128,14 @@ public class ActionHandle {
                 .build();
     }
 
+    /**
+     * 处理点击操作
+     *
+     * @param action 操作
+     * @param width  屏幕宽度
+     * @param height 屏幕高度
+     * @return ActionResult
+     */
     private ActionResult _handleTap(Map<String, Object> action, int width, int height) {
         if (!action.containsKey("element")) {
             return ActionResult.builder()
@@ -121,6 +163,14 @@ public class ActionHandle {
                 .build();
     }
 
+    /**
+     * 处理双击操作
+     *
+     * @param action 操作
+     * @param width  屏幕宽度
+     * @param height 屏幕高度
+     * @return ActionResult
+     */
     private ActionResult _handleDoubleTap(Map<String, Object> action, int width, int height) {
         if (!action.containsKey("element")) {
             return ActionResult.builder()
@@ -151,6 +201,12 @@ public class ActionHandle {
                 .build();
     }
 
+    /**
+     * 处理滑动操作
+     *
+     * @param action 操作
+     * @return ActionResult
+     */
     private ActionResult _handleSwipe(Map<String, Object> action, int width, int height) {
         List<Float> start = JSON.parseArray(String.valueOf(action.get("start")), Float.class);
         List<Float> end = JSON.parseArray(String.valueOf(action.get("end")), Float.class);
@@ -175,6 +231,12 @@ public class ActionHandle {
                 .build();
     }
 
+    /**
+     * 处理输入操作
+     *
+     * @param action 操作
+     * @return ActionResult
+     */
     private ActionResult _handleType(Map<String, Object> action) {
         String text = String.valueOf(action.get("text"));
         ActionService.getInstance().inputText(text);
@@ -185,6 +247,11 @@ public class ActionHandle {
                 .build();
     }
 
+    /**
+     * 处理返回上级操作
+     *
+     * @return ActionResult
+     */
     private ActionResult _handleBack() {
         ActionService.getInstance().goBack();
         return ActionResult.builder()
@@ -193,6 +260,11 @@ public class ActionHandle {
                 .build();
     }
 
+    /**
+     * 处理返回主页操作
+     *
+     * @return ActionResult
+     */
     private ActionResult _handleHome() {
         ActionService.getInstance().goHome();
         return ActionResult.builder()
@@ -201,6 +273,57 @@ public class ActionHandle {
                 .build();
     }
 
+    /**
+     * 处理等待操作
+     *
+     * @return ActionResult
+     */
+    private ActionResult _handleWait(Map<String, Object> action) {
+        // 默认等待一秒
+        long duration = 1000;
+        if (action.containsKey("duration")) {
+            duration = Long.parseLong(String.valueOf(action.get("duration"))
+                    .replace("seconds", "").trim());
+        }
+
+        try {
+            Thread.sleep(duration);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return ActionResult.builder()
+                .success(true)
+                .shouldFinish(false)
+                .build();
+    }
+
+    /**
+     * 处理挂起操作
+     *
+     * @return ActionResult
+     */
+    private ActionResult _handleTakeOver() {
+        // 等待1.5秒处理验证码
+        long duration = 1500;
+        try {
+            Thread.sleep(duration);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return ActionResult.builder()
+                .success(true)
+                .shouldFinish(false)
+                .build();
+    }
+
+    /**
+     * 启动App
+     *
+     * @param appName App名称
+     * @return boolean
+     */
     private boolean _launchApp(String appName) {
         PackageManager pm = this.context.getPackageManager();
         String packageName = Objects.requireNonNull(AppPackage.fromLabel(appName)).pkg;

@@ -20,6 +20,9 @@ import java.util.stream.Collectors;
 
 /**
  * Helper class for building conversation messages.
+ *
+ * @author harrsion
+ * @date 2025/12/15
  */
 public class MessageBuilder {
 

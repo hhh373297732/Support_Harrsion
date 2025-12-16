@@ -5,11 +5,11 @@ import android.util.Log;
 import com.alibaba.fastjson2.JSON;
 import com.openai.models.chat.completions.ChatCompletionMessageParam;
 import com.support.harrsion.agent.action.ActionHandle;
-import com.support.harrsion.agent.device.ScreenshotCallback;
 import com.support.harrsion.agent.model.MessageBuilder;
 import com.support.harrsion.agent.model.ModelClient;
 import com.support.harrsion.agent.utils.DeviceUtil;
 import com.support.harrsion.agent.utils.MessageParseUtil;
+import com.support.harrsion.config.AppConfig;
 import com.support.harrsion.dto.action.ActionResult;
 import com.support.harrsion.dto.agent.AgentConfig;
 import com.support.harrsion.dto.model.ModelConfig;
@@ -22,7 +22,13 @@ import java.util.List;
 import java.util.Map;
 
 
-public class Agent implements ScreenshotCallback {
+/**
+ * Agent 处理器
+ *
+ * @author harrsion
+ * @date 2025/12/15
+ */
+public class Agent implements DeviceUtil.ScreenshotCallback {
 
     private final AgentConfig agentConfig;
     private final ModelConfig modelConfig;
@@ -34,12 +40,11 @@ public class Agent implements ScreenshotCallback {
     private String _currentTask;
     private String _currentApp;
     private ActionHandle actionHandle;
-    private Boolean initFlag = false;
 
     public Agent(Context context, ModelConfig modelConfig) {
         this.appContext = context;
         this.modelConfig = modelConfig;
-        this.agentConfig = new AgentConfig();
+        this.agentConfig = new AgentConfig(AppConfig.Agent.maxSteps, AppConfig.Agent.verbose);
         this._init();
     }
 
@@ -63,16 +68,10 @@ public class Agent implements ScreenshotCallback {
      * @return Final message from the agent.
      */
     public void run(String task) {
-        // init context and step count
         this.reset();
         this._currentTask = task;
 
-        if (initFlag) {
-            this._executeStepAsync();
-        } else {
-            this._checkModelApi();
-            this.initFlag = true;
-        }
+        this._checkModelApi();
     }
 
     /**
@@ -80,6 +79,7 @@ public class Agent implements ScreenshotCallback {
      */
     private void reset() {
         this._context.clear();
+        this._context.add(MessageBuilder.createSystemMessage(this.agentConfig.getSystemPrompt()));
         this._stepCount = 0;
     }
 
@@ -100,23 +100,25 @@ public class Agent implements ScreenshotCallback {
      * 检查模型API是否可用。
      */
     private void _checkModelApi() {
-        this.modelClient.requestAsync(List.of(MessageBuilder.createUserMessage(UserMessageOption
-                        .builder()
-                        .text("Hi,回复一个ok")
-                        .build()))
+        this.modelClient.requestAsync(List.of(MessageBuilder
+                        .createUserMessage(UserMessageOption.builder().text("Hi,回复一个ok").build()))
                 , new ModelClient.Callback() {
             @Override
             public void onSuccess(ModelResponse response) {
-                _currentApp = DeviceUtil.getHardwareDeviceName();
-                Log.d("Agent", "✅ Model API checks passed!");
-                Log.d("Agent", "=".repeat(50));
-                Log.d("Agent", "Phone Agent - AI-powered phone automation");
-                Log.d("Agent", "=".repeat(50));
-                Log.d("Agent", "Model：" + modelConfig.getModelName());
-                Log.d("Agent", "Base URL：" + modelConfig.getBaseUrl());
-                Log.d("Agent", "Max Steps：" + agentConfig.getMaxSteps());
-                Log.d("Agent", "Device：" + _currentApp);
-                Log.d("Agent", "=".repeat(50));
+                if (_currentApp == null) {
+                    _currentApp = DeviceUtil.getHardwareDeviceName();
+                }
+                if (agentConfig.getVerbose()) {
+                    Log.d("Agent", "✅ Model API checks passed!");
+                    Log.d("Agent", "=".repeat(50));
+                    Log.d("Agent", "Phone Agent - AI-powered phone automation");
+                    Log.d("Agent", "=".repeat(50));
+                    Log.d("Agent", "Model：" + modelConfig.getModelName());
+                    Log.d("Agent", "Base URL：" + modelConfig.getBaseUrl());
+                    Log.d("Agent", "Max Steps：" + agentConfig.getMaxSteps());
+                    Log.d("Agent", "Device：" + _currentApp);
+                    Log.d("Agent", "=".repeat(50));
+                }
                 _executeStepAsync();
             }
 
@@ -128,6 +130,11 @@ public class Agent implements ScreenshotCallback {
         });
     }
 
+    /**
+     * 截图回调处理
+     *
+     * @param screenshot 包含 Base64 数据的截图对象
+     */
     @Override
     public void onScreenshotReady(Screenshot screenshot) {
         this._stepCount++;
@@ -136,16 +143,17 @@ public class Agent implements ScreenshotCallback {
 
         String screenInfo = MessageBuilder.buildScreenInfo(this._currentApp);
 
+        String textContent;
         if (isFirst) {
-            this._context.add(MessageBuilder.createSystemMessage(this.agentConfig.getSystemPrompt()));
-            String textContent = String.format("%s\n\n%s", this._currentTask, screenInfo);
-            this._context.add(MessageBuilder.createUserMessage(
-                    UserMessageOption.builder().text(textContent).imageBase64(screenshot.getBase64Data()).build()));
+            textContent = String.format("%s\n\n%s", this._currentTask, screenInfo);
         } else {
-            String textContent = String.format("** Screen Info **\n\n%s", screenInfo);
-            this._context.add(MessageBuilder.createUserMessage(
-                    UserMessageOption.builder().text(textContent).imageBase64(screenshot.getBase64Data()).build()));
+            textContent = String.format("** Screen Info **\n\n%s", screenInfo);
         }
+        this._context.add(MessageBuilder.createUserMessage(
+                UserMessageOption.builder()
+                        .text(textContent)
+                        .imageBase64(screenshot.getBase64Data())
+                        .build()));
 
         this.modelClient.requestAsync(this._context, new ModelClient.Callback() {
             @Override
@@ -167,8 +175,16 @@ public class Agent implements ScreenshotCallback {
                 _context.set(_context.size() - 1, MessageBuilder
                         .removeImagesFromMessage(_context.get(_context.size() - 1)));
 
+                // 执行动作
                 ActionResult result = actionHandle.execute(action, screenshot.getWidth(), screenshot.getHeight());
 
+                try{
+                    Thread.sleep(500);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                // 添加思考和操作上下文
                 _context.add(MessageBuilder.createAssistantMessage(
                         String.format("<think>%s</think><answer>%s</answer>",
                                 response.getThinking(), response.getAction())));
@@ -207,6 +223,11 @@ public class Agent implements ScreenshotCallback {
 
     }
 
+    /**
+     * 截图失败处理
+     *
+     * @param error
+     */
     @Override
     public void onScreenshotFailed(String error) {
         Log.e("Agent", "Screenshot failed: " + error);

@@ -13,6 +13,12 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * 模型客户端
+ *
+ * @author harrsion
+ * @date 2025/12/15
+ */
 public class ModelClient {
 
     private final ModelConfig config;
@@ -101,6 +107,12 @@ public class ModelClient {
         return new String[]{"", content};
     }
 
+    /**
+     * 异步请求模型
+     *
+     * @param messages 消息列表
+     * @param callback 回调处理接口
+     */
     public void requestAsync(List<ChatCompletionMessageParam> messages, Callback callback) {
         executor.execute(() -> {
             try {
@@ -113,6 +125,9 @@ public class ModelClient {
     }
 
 
+    /**
+     * 模型请求回调处理接口
+     */
     public interface Callback {
         void onSuccess(ModelResponse response);
         void onError(Exception e);

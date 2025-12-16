@@ -9,6 +9,9 @@ import java.util.regex.Pattern;
 
 /**
  * 消息解析工具类
+ *
+ * @author harrsion
+ * @date 2025/12/15
  */
 public class MessageParseUtil {
 

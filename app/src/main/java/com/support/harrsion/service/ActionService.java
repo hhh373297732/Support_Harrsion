@@ -2,7 +2,6 @@ package com.support.harrsion.service;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
-import android.annotation.SuppressLint;
 import android.graphics.Path;
 import android.os.Bundle;
 import android.view.accessibility.AccessibilityEvent;
@@ -10,14 +9,17 @@ import android.view.accessibility.AccessibilityNodeInfo;
 
 import lombok.Getter;
 
-
-@SuppressLint("AccessibilityPolicy")
+/**
+ * 操作服务，基于辅助服务实现
+ *
+ * @author harrsion
+ * @date 2025/12/15
+ */
 public class ActionService extends AccessibilityService {
 
     @Getter
     private static ActionService instance;
 
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
@@ -79,6 +81,12 @@ public class ActionService extends AccessibilityService {
         dispatchGesture(gesture, null, null);
     }
 
+    /**
+     * 输入文本
+     *
+     * @param text 文本
+     * @return 是否成功
+     */
     public boolean inputText(String text) {
         AccessibilityNodeInfo focusNode = getRootInActiveWindow();
         if (focusNode == null) return false;
@@ -98,14 +106,30 @@ public class ActionService extends AccessibilityService {
         );
     }
 
+    /**
+     * 返回上级
+     *
+     * @return 是否成功
+     */
     public boolean goBack() {
         return performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK);
     }
 
+    /**
+     * 跳转桌面
+     *
+     * @return 是否成功
+     */
     public boolean goHome() {
         return performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME);
     }
 
+    /**
+     * 寻找当前页面的焦点输入框
+     *
+     * @param node 节点
+     * @return 输入框
+     */
     private AccessibilityNodeInfo findFocusedEditText(AccessibilityNodeInfo node) {
         if (node == null) return null;
 

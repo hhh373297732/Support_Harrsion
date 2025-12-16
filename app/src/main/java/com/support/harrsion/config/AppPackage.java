@@ -1,5 +1,11 @@
 package com.support.harrsion.config;
 
+/**
+ * app包名枚举
+ *
+ * @author harrsion
+ * @date 2025/12/15
+ */
 public enum AppPackage {
     // --- Social & Communications ---
     WECHAT("微信", "com.tencent.mm"),
@@ -131,7 +137,10 @@ public enum AppPackage {
 
     public static AppPackage fromLabel(String label) {
         for (AppPackage a : values()) {
-            if (a.label.equals(label)) return a;
+
+            if (a.label.trim().toLowerCase().contains(label.trim().toLowerCase())) {
+                return a;
+            }
         }
         return null;
     }

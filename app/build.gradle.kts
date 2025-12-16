@@ -66,6 +66,7 @@ dependencies {
     implementation("com.openai:openai-java:4.11.0")
     implementation("com.alibaba.fastjson2:fastjson2:2.0.60")
     implementation("org.apache.commons:commons-lang3:3.18.0")
+    implementation("ai.picovoice:porcupine-android:4.0.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
