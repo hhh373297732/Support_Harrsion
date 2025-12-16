@@ -86,19 +86,9 @@
         android:padding="16dp"
         android:fillViewport="true">
 
-        <LinearLayout
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:gravity="center_vertical">
-
-            <!-- Messages Container -->
-            <LinearLayout
-                android:id="@+id/messages_container"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp" />
+            android:layout_height="match_parent">
 
             <!-- Welcome Area (will be hidden when messages are sent) -->
             <LinearLayout
@@ -107,7 +97,8 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center_horizontal"
-                android:paddingVertical="32dp">
+                android:paddingVertical="0dp"
+                android:layout_centerVertical="true">
 
                 <!-- Large Avatar -->
                 <LinearLayout
@@ -115,13 +106,14 @@
                     android:layout_height="120dp"
                     android:background="@drawable/rounded_avatar_large"
                     android:gravity="center"
-                    android:layout_marginVertical="24dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="16dp"
                     android:elevation="4dp">
 
                     <ImageView
                         android:layout_width="80dp"
                         android:layout_height="80dp"
-                        android:src="@drawable/ic_avatar_large"
+                        android:src="@drawable/ic_thinking"
                         android:background="@android:color/white"
                         android:padding="8dp"
                         android:contentDescription="豆包头像" />
@@ -210,7 +202,17 @@
                     </LinearLayout>
                 </HorizontalScrollView>
             </LinearLayout>
-        </LinearLayout>
+
+            <!-- Messages Container -->
+            <LinearLayout
+                android:id="@+id/messages_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:gravity="top"
+                android:layout_above="@id/welcome_area" />
+        </RelativeLayout>
     </ScrollView>
 
     <!-- Bottom Input Area -->

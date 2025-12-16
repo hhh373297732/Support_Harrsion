@@ -106,9 +106,13 @@ public class MainActivity extends Activity {
             
             // 显示消息
             displayMessage(message, true);
-            
+
             // 清空输入框
             inputText.setText("");
+            Intent intent = new Intent(getApplicationContext(), AgentService.class);
+            intent.putExtra("task", message);
+            startForegroundService(intent);
+
         }
     }
 
@@ -139,7 +143,12 @@ public class MainActivity extends Activity {
         
         // 添加到消息容器
         messageLayout.addView(messageBubble);
-        messagesContainer.addView(messageLayout);
+        // 用户消息添加到顶部，机器人消息添加到末尾
+        if (isUser) {
+            messagesContainer.addView(messageLayout, 0);
+        } else {
+            messagesContainer.addView(messageLayout);
+        }
     }
 
     /**
