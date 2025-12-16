@@ -1,6 +1,7 @@
 package com.support.harrsion.agent;
 
 import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
 import com.alibaba.fastjson2.JSON;
 import com.openai.models.chat.completions.ChatCompletionMessageParam;
@@ -190,20 +191,63 @@ public class Agent implements DeviceUtil.ScreenshotCallback {
                                 response.getThinking(), response.getAction())));
 
                 Boolean finished;
-                if (String.valueOf(action.get("_metadata")).equals("finish")) {
+                String metadata = String.valueOf(action.get("_metadata"));
+                Log.d("Agent", "当前action metadata: " + metadata);
+                Log.d("Agent", "result.getShouldFinish(): " + result.getShouldFinish());
+                Log.d("Agent", "result.getMessage(): " + result.getMessage());
+                
+                // 检查是否应该完成任务
+                if (metadata.equals("finish") || result.getShouldFinish() || metadata.contains("finish")) {
                     finished = true;
                 } else {
-                    finished = result.getShouldFinish();
+                    finished = false;
                 }
+                Log.d("Agent", "最终任务完成状态: " + finished);
 
-                if (finished && agentConfig.getVerbose()) {
-                    Log.d("Agent", "🎉 " + "=".repeat(47));
-                    Log.d("Agent", "✅ task_completed：" + (
-                            result.getMessage() != null && !result.getMessage().isEmpty()
-                                    ? result.getMessage()
-                                    : action.getOrDefault("message", "done")
-                    ));
-                    Log.d("Agent", "=".repeat(50));
+                if (finished) {
+                    String completionMessage;
+                    
+                    // 确保能获取到完成消息
+                    if (result.getMessage() != null && !result.getMessage().isEmpty()) {
+                        completionMessage = result.getMessage();
+                    } else if (action.containsKey("message")) {
+                        completionMessage = String.valueOf(action.get("message"));
+                    } else {
+                        // 如果没有明确的完成消息，使用默认消息
+                        completionMessage = "任务完成！";
+                    }
+                    
+                    Log.d("Agent", "最终使用的完成消息: " + completionMessage);
+                    
+                    if (agentConfig.getVerbose()) {
+                        Log.d("Agent", "🎉 " + "=".repeat(47));
+                        Log.d("Agent", "✅ task_completed：" + completionMessage);
+                        Log.d("Agent", "=".repeat(50));
+                    }
+                    
+                    // 发送全局广播，将结果传递给MainActivity
+                    Log.d("Agent", "准备发送任务完成全局广播...");
+                    Intent broadcastIntent = new Intent("com.support.harrsion.AGENT_TASK_COMPLETED");
+                    broadcastIntent.putExtra("result_message", completionMessage);
+                    broadcastIntent.setFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+                    
+                    // 指定广播只发送给当前应用程序
+                    broadcastIntent.setPackage(appContext.getPackageName());
+                    
+                    Log.d("Agent", "全局广播消息内容: " + completionMessage);
+                    Log.d("Agent", "全局广播Intent: " + broadcastIntent);
+                    Log.d("Agent", "全局广播Action: " + broadcastIntent.getAction());
+                    Log.d("Agent", "全局广播Flags: " + broadcastIntent.getFlags());
+                    Log.d("Agent", "全局广播Package: " + broadcastIntent.getPackage());
+                    
+                    try {
+                        appContext.sendBroadcast(broadcastIntent);
+                        Log.d("Agent", "任务完成全局广播已发送");
+                    } catch (Exception e) {
+                        Log.e("Agent", "发送全局广播失败: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                    
                     return;
                 }
 

@@ -15,6 +15,7 @@
     <color name="doubao_button_hover">#357ABD</color>
     <color name="doubao_avatar_background">#E6F2FF</color>
     <color name="doubao_input_background">#F5F7FA</color>
+    <color name="ai_message_background">#00AC84</color>
     
     <!-- Original colors -->
     <color name="purple_200">#FFBB86FC</color>

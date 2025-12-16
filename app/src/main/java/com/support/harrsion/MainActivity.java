@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.util.Log;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -19,8 +21,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.drawerlayout.widget.DrawerLayout;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,15 +49,19 @@ public class MainActivity extends Activity {
     private DrawerLayout mDrawerLayout;
     private LinearLayout messagesContainer;
     private LinearLayout welcomeArea;
+    private Context appContext;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // 初始化应用上下文
+        appContext = getApplicationContext();
         // 假设您的布局文件中有一个ID为 btn_start_capture 的按钮
         setContentView(R.layout.activity_main);
 
         mProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-        requestScreenCapturePermission();
+        // 暂时不立即请求屏幕捕获权限，避免页面变灰色
+         requestScreenCapturePermission();
 
         ArrayList<String> permissionsToRequest  = new ArrayList<>();
         if (!hasNotificationPermission()) {
@@ -173,6 +181,12 @@ public class MainActivity extends Activity {
      * 显示消息
      */
     private void displayMessage(String message, boolean isUser) {
+        Log.d("MainActivity", "displayMessage called with message: " + message + ", isUser: " + isUser);
+        Log.d("MainActivity", "messagesContainer before add: " + messagesContainer.getChildCount() + " children");
+        Log.d("MainActivity", "messagesContainer visibility: " + messagesContainer.getVisibility());
+        Log.d("MainActivity", "messagesContainer width: " + messagesContainer.getWidth() + ", height: " + messagesContainer.getHeight());
+        Log.d("MainActivity", "welcomeArea visibility: " + welcomeArea.getVisibility());
+        
         // 创建消息布局
         LinearLayout messageLayout = new LinearLayout(this);
         messageLayout.setOrientation(LinearLayout.HORIZONTAL);
@@ -190,7 +204,9 @@ public class MainActivity extends Activity {
             messageBubble.setBackgroundResource(R.drawable.input_background);
             messageBubble.setPadding(16, 12, 16, 12);
         } else {
-            messageBubble.setBackgroundResource(R.drawable.input_background);
+            // 为AI消息设置指定背景样式
+            messageBubble.setBackgroundResource(R.drawable.ai_message_background);
+            messageBubble.setTextColor(Color.WHITE);
             messageBubble.setPadding(16, 12, 16, 12);
         }
 
@@ -198,6 +214,14 @@ public class MainActivity extends Activity {
         messageLayout.addView(messageBubble);
         // 所有消息都添加到末尾，保持时间顺序
         messagesContainer.addView(messageLayout);
+        
+        Log.d("MainActivity", "messagesContainer after add: " + messagesContainer.getChildCount() + " children");
+        // 强制刷新布局
+        messagesContainer.requestLayout();
+        // 滚动到底部以显示最新消息
+        ScrollView scrollView = (ScrollView) messagesContainer.getParent().getParent();
+        scrollView.fullScroll(ScrollView.FOCUS_DOWN);
+        Log.d("MainActivity", "ScrollView scrolled to bottom");
     }
 
     /**
@@ -226,6 +250,46 @@ public class MainActivity extends Activity {
         if (mDrawerLayout != null) {
             mDrawerLayout.openDrawer(R.id.drawer_session_history);
         }
+    }
+
+    /**
+     * 广播接收器，用于接收Agent任务完成的通知
+     */
+    private BroadcastReceiver agentTaskReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d("MainActivity", "收到广播，action: " + intent.getAction());
+            if ("com.support.harrsion.AGENT_TASK_COMPLETED".equals(intent.getAction())) {
+                String resultMessage = intent.getStringExtra("result_message");
+                Log.d("MainActivity", "收到任务完成消息: " + resultMessage);
+                // 在主线程更新UI
+            runOnUiThread(() -> {
+                Log.d("MainActivity", "准备显示任务完成消息");
+                // 隐藏欢迎区域，确保消息可见
+                welcomeArea.setVisibility(View.GONE);
+                displayMessage(resultMessage, false);
+                Log.d("MainActivity", "任务完成消息已显示");
+            });
+            }
+        }
+    };
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // 注册全局广播接收器
+        IntentFilter filter = new IntentFilter("com.support.harrsion.AGENT_TASK_COMPLETED");
+        registerReceiver(agentTaskReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        Log.d("MainActivity", "全局广播接收器已注册");
+        Log.d("MainActivity", "广播接收器Action: com.support.harrsion.AGENT_TASK_COMPLETED");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // 注销全局广播接收器
+        unregisterReceiver(agentTaskReceiver);
+        Log.d("MainActivity", "全局广播接收器已注销");
     }
 
     /**

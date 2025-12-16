@@ -84,11 +84,13 @@
             android:layout_below="@id/top_nav_bar"
             android:layout_above="@+id/bottom_function_bar"
             android:padding="16dp"
-            android:fillViewport="true">
+            android:fillViewport="true"
+            android:background="@android:color/white">
 
             <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:background="@android:color/white">
 
                 <!-- Welcome Area (will be hidden when messages are sent) -->
                 <LinearLayout
@@ -199,9 +201,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp"
                     android:gravity="top"
-                    android:layout_above="@id/welcome_area" />
+                    android:layout_alignParentTop="true"
+                    android:background="@android:color/white" />
             </RelativeLayout>
         </ScrollView>
 
