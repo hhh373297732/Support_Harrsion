@@ -27,6 +27,7 @@ public enum AppPackage {
     PINDUODUO("拼多多", "com.xunmeng.pinduoduo"),
     TAOBAO_SHANGOU("淘宝闪购", "com.taobao.taobao"), // Note: Same package as Taobao
     JINGDONG_MIAOSONG("京东秒送", "com.jingdong.app.mall"), // Note: Same package as JD
+    XIANYU("闲鱼", "com.taobao.idlefish"), // Note: Same package as JD
     TEMU("Temu", "com.einnovation.temu"),
 
     // --- Maps & Navigation ---
