@@ -60,7 +60,6 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         mProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-        // 暂时不立即请求屏幕捕获权限，避免页面变灰色
          requestScreenCapturePermission();
 
         ArrayList<String> permissionsToRequest  = new ArrayList<>();
@@ -191,23 +190,30 @@ public class MainActivity extends Activity {
         LinearLayout messageLayout = new LinearLayout(this);
         messageLayout.setOrientation(LinearLayout.HORIZONTAL);
         messageLayout.setGravity(isUser ? Gravity.END : Gravity.START);
-        messageLayout.setPadding(16, 8, 16, 8);
+        // 为不同类型的消息设置不同的布局内边距
+        if (isUser) {
+            // 用户消息（右对齐）：左边距大，右边距小
+            messageLayout.setPadding(40, 8, 16, 8);
+        } else {
+            // AI消息（左对齐）：左边距小，右边距大
+            messageLayout.setPadding(16, 8, 32, 8);
+        }
 
         // 创建消息气泡
         TextView messageBubble = new TextView(this);
         messageBubble.setText(message);
-        messageBubble.setTextSize(16);
+        messageBubble.setTextSize(14);
         messageBubble.setTextColor(getResources().getColor(R.color.doubao_text_primary));
 
         // 设置不同的背景和内边距
         if (isUser) {
             messageBubble.setBackgroundResource(R.drawable.input_background);
-            messageBubble.setPadding(16, 12, 16, 12);
+            messageBubble.setPadding(20, 16, 20, 16);
         } else {
             // 为AI消息设置指定背景样式
             messageBubble.setBackgroundResource(R.drawable.ai_message_background);
-            messageBubble.setTextColor(Color.WHITE);
-            messageBubble.setPadding(16, 12, 16, 12);
+             messageBubble.setTextColor(Color.BLACK);
+            messageBubble.setPadding(20, 16, 20, 16);
         }
 
         // 添加到消息容器
