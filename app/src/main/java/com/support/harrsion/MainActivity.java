@@ -1,19 +1,15 @@
 package com.support.harrsion;
 
-import android.app.Activity;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.util.Log;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.Manifest;
-import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -23,45 +19,32 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import androidx.activity.ComponentActivity;
 import androidx.drawerlayout.widget.DrawerLayout;
-
 import java.io.IOException;
 import java.io.InputStream;
+import androidx.lifecycle.ViewModelProvider;
 
-import androidx.annotation.NonNull;
-
+import com.support.harrsion.broadcast.TaskBroadcastReceiver;
 import com.support.harrsion.broadcast.WakeUpBroadcastReceiver;
 import com.support.harrsion.service.AgentService;
-import com.support.harrsion.service.ActionService;
-import com.support.harrsion.service.ScreenCaptureService;
 import com.support.harrsion.utils.PermissionUtil;
-
+import com.support.harrsion.viewModel.SharedViewModel;
 import java.util.ArrayList;
 
-public class MainActivity extends Activity {
-
-    private static final int REQUEST_CODE_SCREEN_CAPTURE = 1001;
-    private static final int REQUEST_CODE_AUDIO = 1002;
-    private MediaProjectionManager mProjectionManager;
-
+public class MainActivity extends ComponentActivity {
     private DrawerLayout mDrawerLayout;
     private LinearLayout messagesContainer;
     private LinearLayout welcomeArea;
-    private Context appContext;
+    private TaskBroadcastReceiver taskBroadcastReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // 初始化应用上下文
-        appContext = getApplicationContext();
-        // 假设您的布局文件中有一个ID为 btn_start_capture 的按钮
         setContentView(R.layout.activity_main);
 
-        mProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-        requestScreenCapturePermission();
+        PermissionUtil.requestScreenCapturePermission(this);
 
-        // 权限请求
         ArrayList<String> permissionsToRequest = new ArrayList<>();
         if (!PermissionUtil.hasNotificationPermission(this)) {
             permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS);
@@ -91,7 +74,6 @@ public class MainActivity extends Activity {
 
         // 新会话按钮点击事件
         newSessionButton.setOnClickListener(v -> createNewSession(inputText));
-
         // 发送按钮点击事件
         sendButton.setOnClickListener(v -> sendMessage(inputText));
 
@@ -110,29 +92,38 @@ public class MainActivity extends Activity {
         // Load logo image from assets
         loadLogoImage();
 
-        if (!isAccessibilityServiceEnabled(this)) {
-            openAccessibilitySettings(this);
+        SharedViewModel sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
+        // 观察UI状态的变化
+        sharedViewModel.getUiState().observe(this, uiState -> {
+            if (uiState != null) {
+                welcomeArea.setVisibility(uiState.welcomeAreaVisible ? View.VISIBLE : View.GONE);
+                displayMessage(uiState.message, false);
+            }
+        });
+
+        // 检查辅助服务是否已启用
+        if (!PermissionUtil.isAccessibilityServiceEnabled(this)) {
+            PermissionUtil.openAccessibilitySettings(this);
+        }
+
+        taskBroadcastReceiver = new TaskBroadcastReceiver();
+    }
+
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        IntentFilter filter = new IntentFilter(TaskBroadcastReceiver.ACTION_TASK_COMPLETED);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(taskBroadcastReceiver, filter, Context.RECEIVER_EXPORTED);
         }
     }
 
-    public static void openAccessibilitySettings(Context context) {
-        Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(intent);
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(taskBroadcastReceiver);
     }
-
-    public static boolean isAccessibilityServiceEnabled(Context context) {
-        String service = context.getPackageName() + "/" +
-                ActionService.class.getCanonicalName();
-
-        String enabledServices = Settings.Secure.getString(
-                context.getContentResolver(),
-                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-        );
-
-        return enabledServices != null && enabledServices.contains(service);
-    }
-
 
     /**
      * 发送消息
@@ -140,13 +131,8 @@ public class MainActivity extends Activity {
     private void sendMessage(EditText inputText) {
         String message = inputText.getText().toString().trim();
         if (!message.isEmpty()) {
-            // 隐藏欢迎区域
             welcomeArea.setVisibility(View.GONE);
-
-            // 显示消息
             displayMessage(message, true);
-
-            // 清空输入框
             inputText.setText("");
             Intent intent = new Intent(getApplicationContext(), AgentService.class);
             intent.putExtra("task", message);
@@ -158,7 +144,7 @@ public class MainActivity extends Activity {
     /**
      * 显示消息
      */
-    private void displayMessage(String message, boolean isUser) {
+    public void displayMessage(String message, boolean isUser) {
         Log.d("MainActivity", "displayMessage called with message: " + message + ", isUser: " + isUser);
         Log.d("MainActivity", "messagesContainer before add: " + messagesContainer.getChildCount() + " children");
         Log.d("MainActivity", "messagesContainer visibility: " + messagesContainer.getVisibility());
@@ -238,46 +224,6 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * 广播接收器，用于接收Agent任务完成的通知
-     */
-    private final BroadcastReceiver agentTaskReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Log.d("MainActivity", "收到广播，action: " + intent.getAction());
-            if ("com.support.harrsion.AGENT_TASK_COMPLETED".equals(intent.getAction())) {
-                String resultMessage = intent.getStringExtra("result_message");
-                Log.d("MainActivity", "收到任务完成消息: " + resultMessage);
-                // 在主线程更新UI
-                runOnUiThread(() -> {
-                    Log.d("MainActivity", "准备显示任务完成消息");
-                    // 隐藏欢迎区域，确保消息可见
-                    welcomeArea.setVisibility(View.GONE);
-                    displayMessage(resultMessage, false);
-                    Log.d("MainActivity", "任务完成消息已显示");
-                });
-            }
-        }
-    };
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        // 注册全局广播接收器
-        IntentFilter filter = new IntentFilter("com.support.harrsion.AGENT_TASK_COMPLETED");
-        registerReceiver(agentTaskReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        Log.d("MainActivity", "全局广播接收器已注册");
-        Log.d("MainActivity", "广播接收器Action: com.support.harrsion.AGENT_TASK_COMPLETED");
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        // 注销全局广播接收器
-        unregisterReceiver(agentTaskReceiver);
-        Log.d("MainActivity", "全局广播接收器已注销");
-    }
-
-    /**
      * 从assets加载logo图片
      */
     private void loadLogoImage() {
@@ -295,52 +241,4 @@ public class MainActivity extends Activity {
             e.printStackTrace();
         }
     }
-
-    /**
-     * 启动系统 Intent，请求屏幕捕获权限。
-     */
-    private void requestScreenCapturePermission() {
-        if (mProjectionManager != null) {
-            startActivityForResult(
-                    mProjectionManager.createScreenCaptureIntent(),
-                    REQUEST_CODE_SCREEN_CAPTURE
-            );
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_CODE_SCREEN_CAPTURE) {
-            if (resultCode == Activity.RESULT_OK) {
-                // 用户授权成功
-                Toast.makeText(this, "屏幕捕获已授权，正在启动服务...", Toast.LENGTH_SHORT).show();
-
-                // 启动后台服务，并将授权结果传递给它
-                Intent serviceIntent = new Intent(this, ScreenCaptureService.class);
-                serviceIntent.putExtra("resultCode", resultCode);
-                serviceIntent.putExtra("data", data);
-
-                startForegroundService(serviceIntent);
-            } else {
-                // 用户拒绝授权
-                Toast.makeText(this, "用户拒绝屏幕捕获", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (grantResults.length == 0 || grantResults[0] == PackageManager.PERMISSION_DENIED) {
-            WakeUpBroadcastReceiver.initError(this,
-                    "Microphone/notification permissions are required for this phone");
-        } else {
-            WakeUpBroadcastReceiver.startService(this);
-        }
-    }
-
-
 }

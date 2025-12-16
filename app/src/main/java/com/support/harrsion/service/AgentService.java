@@ -4,9 +4,7 @@ import android.app.Notification;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
-
 import androidx.annotation.Nullable;
-
 import com.support.harrsion.agent.Agent;
 import com.support.harrsion.utils.DeviceUtil;
 import com.support.harrsion.config.AppConfig;
@@ -41,6 +39,7 @@ public class AgentService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         String task = intent.getStringExtra("task");
         agent.run(task);
+
         return START_STICKY;
     }
 
