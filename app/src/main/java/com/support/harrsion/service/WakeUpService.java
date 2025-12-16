@@ -16,6 +16,7 @@ import androidx.core.app.NotificationCompat;
 
 import com.support.harrsion.MainActivity;
 import com.support.harrsion.R;
+import com.support.harrsion.agent.utils.DeviceUtil;
 
 import ai.picovoice.porcupine.Porcupine;
 import ai.picovoice.porcupine.PorcupineActivationException;
@@ -43,39 +44,30 @@ public class WakeUpService extends Service {
     private final PorcupineManagerCallback porcupineManagerCallback = (keywordIndex) -> {
         numUtterances++;
 
-        final String contentText = numUtterances == 1 ? " time!" : " times!";
+        final String contentText = numUtterances == 1 ? "!" : (" ，第" + numUtterances + "次了哦!");
         Notification n = getNotification(
                 "Wake word",
-                "Detected " + numUtterances + contentText);
+                "小陈听到了" + contentText);
 
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         assert notificationManager != null;
         notificationManager.notify(1234, n);
     };
 
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel notificationChannel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Porcupine",
-                    NotificationManager.IMPORTANCE_HIGH);
-
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(notificationChannel);
-        }
-    }
-
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         numUtterances = 0;
-        createNotificationChannel();
+        DeviceUtil.createNotificationChannel(this, CHANNEL_ID, "Porcupine",
+                NotificationManager.IMPORTANCE_HIGH);
 
         try {
             porcupineManager = new PorcupineManager.Builder()
                     .setAccessKey(ACCESS_KEY)
-                    .setKeywordPath("assets/小陈_zh_android_v4_0_0.ppn")
-                    .setModelPath("assets/porcupine_params_zh.pv")
+                    .setKeywordPath(DeviceUtil.copyAssetFileToCache(this,
+                            "小陈_zh_android_v4_0_0.ppn", "cache_小陈_zh_android_v4_0_0.ppn"))
+                    .setModelPath(DeviceUtil.copyAssetFileToCache(this,
+                            "porcupine_params_zh.pv", "cache_porcupine_params_zh.pv"))
                     .setSensitivity(0.7f).build(
                             getApplicationContext(),
                             porcupineManagerCallback);
@@ -97,7 +89,7 @@ public class WakeUpService extends Service {
 
         Notification notification = porcupineManager == null ?
                 getNotification("Porcupine init failed", "Service will be shut down") :
-                getNotification("Wake word service", "Say 'Porcupine'!");
+                getNotification("Wake word service", "Say '小陈'!");
         startForeground(1234, notification);
 
         return super.onStartCommand(intent, flags, startId);
@@ -105,6 +97,7 @@ public class WakeUpService extends Service {
 
     private void onPorcupineInitError(String message) {
         Intent i = new Intent("PorcupineInitError");
+        Log.e("PORCUPINE", "porcupine init error: " + message);
         i.putExtra("errorMessage", message);
         sendBroadcast(i);
     }
