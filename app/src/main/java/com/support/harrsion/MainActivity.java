@@ -12,7 +12,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.Manifest;
 import android.media.projection.MediaProjectionManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.Gravity;
@@ -26,17 +25,17 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.drawerlayout.widget.DrawerLayout;
+
 import java.io.IOException;
 import java.io.InputStream;
 
 import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
+import com.support.harrsion.broadcast.WakeUpBroadcastReceiver;
 import com.support.harrsion.service.AgentService;
 import com.support.harrsion.service.ActionService;
 import com.support.harrsion.service.ScreenCaptureService;
-import com.support.harrsion.service.WakeUpService;
+import com.support.harrsion.utils.PermissionUtil;
 
 import java.util.ArrayList;
 
@@ -60,23 +59,22 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         mProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-         requestScreenCapturePermission();
+        requestScreenCapturePermission();
 
-        ArrayList<String> permissionsToRequest  = new ArrayList<>();
-        if (!hasNotificationPermission()) {
+        // 权限请求
+        ArrayList<String> permissionsToRequest = new ArrayList<>();
+        if (!PermissionUtil.hasNotificationPermission(this)) {
             permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS);
         }
-        if (!hasRecordPermission()) {
+        if (!PermissionUtil.hasRecordPermission(this)) {
             permissionsToRequest.add(Manifest.permission.RECORD_AUDIO);
         }
 
         if (permissionsToRequest.isEmpty()) {
-            startService();
+            WakeUpBroadcastReceiver.startService(this);
         } else {
-            requestRecordPermissions(permissionsToRequest.toArray(new String[0]));
+            PermissionUtil.requestPermissions(this, permissionsToRequest.toArray(new String[0]));
         }
-
-//        EditText taskInput = findViewById(R.id.input_text);
 
         // 初始化抽屉布局
         mDrawerLayout = findViewById(R.id.drawer_layout);
@@ -135,25 +133,6 @@ public class MainActivity extends Activity {
         return enabledServices != null && enabledServices.contains(service);
     }
 
-    private boolean hasRecordPermission() {
-        return ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private boolean hasNotificationPermission() {
-        return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                ActivityCompat.checkSelfPermission(
-                        this,
-                        Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private void requestRecordPermissions(String[] permissions) {
-        ActivityCompat.requestPermissions(
-                this,
-                permissions,
-                0);
-    }
 
     /**
      * 发送消息
@@ -185,7 +164,7 @@ public class MainActivity extends Activity {
         Log.d("MainActivity", "messagesContainer visibility: " + messagesContainer.getVisibility());
         Log.d("MainActivity", "messagesContainer width: " + messagesContainer.getWidth() + ", height: " + messagesContainer.getHeight());
         Log.d("MainActivity", "welcomeArea visibility: " + welcomeArea.getVisibility());
-        
+
         // 创建消息布局
         LinearLayout messageLayout = new LinearLayout(this);
         messageLayout.setOrientation(LinearLayout.HORIZONTAL);
@@ -212,7 +191,7 @@ public class MainActivity extends Activity {
         } else {
             // 为AI消息设置指定背景样式
             messageBubble.setBackgroundResource(R.drawable.ai_message_background);
-             messageBubble.setTextColor(Color.BLACK);
+            messageBubble.setTextColor(Color.BLACK);
             messageBubble.setPadding(20, 16, 20, 16);
         }
 
@@ -220,7 +199,7 @@ public class MainActivity extends Activity {
         messageLayout.addView(messageBubble);
         // 所有消息都添加到末尾，保持时间顺序
         messagesContainer.addView(messageLayout);
-        
+
         Log.d("MainActivity", "messagesContainer after add: " + messagesContainer.getChildCount() + " children");
         // 强制刷新布局
         messagesContainer.requestLayout();
@@ -261,7 +240,7 @@ public class MainActivity extends Activity {
     /**
      * 广播接收器，用于接收Agent任务完成的通知
      */
-    private BroadcastReceiver agentTaskReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver agentTaskReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.d("MainActivity", "收到广播，action: " + intent.getAction());
@@ -269,13 +248,13 @@ public class MainActivity extends Activity {
                 String resultMessage = intent.getStringExtra("result_message");
                 Log.d("MainActivity", "收到任务完成消息: " + resultMessage);
                 // 在主线程更新UI
-            runOnUiThread(() -> {
-                Log.d("MainActivity", "准备显示任务完成消息");
-                // 隐藏欢迎区域，确保消息可见
-                welcomeArea.setVisibility(View.GONE);
-                displayMessage(resultMessage, false);
-                Log.d("MainActivity", "任务完成消息已显示");
-            });
+                runOnUiThread(() -> {
+                    Log.d("MainActivity", "准备显示任务完成消息");
+                    // 隐藏欢迎区域，确保消息可见
+                    welcomeArea.setVisibility(View.GONE);
+                    displayMessage(resultMessage, false);
+                    Log.d("MainActivity", "任务完成消息已显示");
+                });
             }
         }
     };
@@ -329,30 +308,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void startService() {
-        Intent serviceIntent = new Intent(this, WakeUpService.class);
-        ContextCompat.startForegroundService(this, serviceIntent);
-    }
-
-    private void stopService() {
-        Intent serviceIntent = new Intent(this, WakeUpService.class);
-        stopService(serviceIntent);
-    }
-
-    private void onPorcupineInitError(final String errorMessage) {
-        runOnUiThread(() -> {
-            Toast.makeText(MainActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
-            stopService();
-        });
-    }
-
-    public class ServiceBroadcastReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            onPorcupineInitError(intent.getStringExtra("errorMessage"));
-        }
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_CODE_SCREEN_CAPTURE) {
@@ -380,12 +335,12 @@ public class MainActivity extends Activity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         if (grantResults.length == 0 || grantResults[0] == PackageManager.PERMISSION_DENIED) {
-            onPorcupineInitError("Microphone/notification permissions are required for this demo");
+            WakeUpBroadcastReceiver.initError(this,
+                    "Microphone/notification permissions are required for this phone");
         } else {
-            startService();
+            WakeUpBroadcastReceiver.startService(this);
         }
     }
-
 
 
 }

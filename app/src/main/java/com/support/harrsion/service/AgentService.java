@@ -8,7 +8,7 @@ import android.os.IBinder;
 import androidx.annotation.Nullable;
 
 import com.support.harrsion.agent.Agent;
-import com.support.harrsion.agent.utils.DeviceUtil;
+import com.support.harrsion.utils.DeviceUtil;
 import com.support.harrsion.config.AppConfig;
 import com.support.harrsion.dto.model.ModelConfig;
 
