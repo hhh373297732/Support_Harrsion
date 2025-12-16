@@ -136,7 +136,7 @@
             android:name=".service.AgentService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="mediaProjection|dataSync"/>
+            android:foregroundServiceType="dataSync"/>
         <service
             android:name=".service.ScreenCaptureService"
             android:enabled="true"
