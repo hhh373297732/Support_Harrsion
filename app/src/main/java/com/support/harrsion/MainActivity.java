@@ -196,12 +196,8 @@ public class MainActivity extends Activity {
 
         // 添加到消息容器
         messageLayout.addView(messageBubble);
-        // 用户消息添加到顶部，机器人消息添加到末尾
-        if (isUser) {
-            messagesContainer.addView(messageLayout, 0);
-        } else {
-            messagesContainer.addView(messageLayout);
-        }
+        // 所有消息都添加到末尾，保持时间顺序
+        messagesContainer.addView(messageLayout);
     }
 
     /**
