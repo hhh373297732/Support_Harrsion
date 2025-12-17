@@ -250,7 +250,6 @@ public class MainActivity extends ComponentActivity {
         itemLayout.setLayoutParams(new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         itemLayout.setPadding(16, 12, 16, 12);
-        itemLayout.setBackgroundResource(R.drawable.input_background);
         itemLayout.setClickable(true);
         itemLayout.setFocusable(true);
         // 设置点击效果
