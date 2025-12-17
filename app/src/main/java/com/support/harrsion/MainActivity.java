@@ -127,6 +127,9 @@ public class MainActivity extends ComponentActivity {
         // 会话历史抽屉按钮点击事件
         sessionHistoryButton.setOnClickListener(v -> openSessionHistoryDrawer());
 
+        // 首页提示词点击事件
+        setupPromptWordsListeners(inputText);
+
         // 点击聊天区域隐藏键盘
         setupKeyboardHiding();
 
@@ -444,6 +447,32 @@ public class MainActivity extends ComponentActivity {
         }
     }
 
+    /**
+     * 设置首页提示词点击事件
+     */
+    private void setupPromptWordsListeners(EditText inputText) {
+        TextView prompt1 = findViewById(R.id.prompt_1);
+        TextView prompt2 = findViewById(R.id.prompt_2);
+        
+        // 创建通用的点击处理逻辑
+        View.OnClickListener promptClickListener = v -> {
+            if (v instanceof TextView) {
+                String promptText = ((TextView) v).getText().toString();
+                inputText.setText(promptText);
+                sendMessage(inputText);
+            }
+        };
+        
+        // 为提示词设置点击事件
+        if (prompt1 != null) {
+            prompt1.setOnClickListener(promptClickListener);
+        }
+        
+        if (prompt2 != null) {
+            prompt2.setOnClickListener(promptClickListener);
+        }
+    }
+    
     /**
      * 设置点击聊天区域隐藏键盘的功能
      */

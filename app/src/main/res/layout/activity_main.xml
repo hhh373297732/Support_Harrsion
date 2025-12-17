@@ -139,6 +139,7 @@
                             android:gravity="center_vertical">
 
                             <TextView
+                                android:id="@+id/prompt_1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="32dp"
                                 android:text="打开小红书搜索川西攻略"
@@ -153,6 +154,7 @@
                                 android:foreground="?android:attr/selectableItemBackground" />
 
                             <TextView
+                                android:id="@+id/prompt_2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="32dp"
                                 android:text="帮我写一个生日祝福"
