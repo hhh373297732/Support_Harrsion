@@ -110,6 +110,19 @@ public class MainActivity extends ComponentActivity {
             }
             return false;
         });
+        
+        // 监听回车键，处理为发送操作
+        inputText.setOnKeyListener((v, keyCode, event) -> {
+            // 检查是否是回车键并且是按下事件
+            if (keyCode == android.view.KeyEvent.KEYCODE_ENTER && event.getAction() == android.view.KeyEvent.ACTION_DOWN) {
+                // 检查是否同时按下了Shift键（如果按下Shift键，则允许换行）
+                if (!event.isShiftPressed()) {
+                    sendMessage(inputText);
+                    return true;
+                }
+            }
+            return false;
+        });
 
         // 会话历史抽屉按钮点击事件
         sessionHistoryButton.setOnClickListener(v -> openSessionHistoryDrawer());
