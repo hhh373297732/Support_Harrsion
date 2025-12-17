@@ -2,7 +2,9 @@ package com.support.harrsion.conversation;
 
 import android.content.Context;
 import android.util.Log;
-import com.support.harrsion.utils.DeviceUtil;
+
+import com.support.harrsion.dto.conversation.Conversation;
+import com.support.harrsion.dto.conversation.Message;
 
 import java.io.*;
 import java.util.ArrayList;
