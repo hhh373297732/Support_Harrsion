@@ -91,6 +91,9 @@ public class MainActivity extends Activity {
         // 初始化会话管理器
         conversationManager = new ConversationManager(this);
         
+        // 创建新会话，确保每次打开app都是新会话
+        conversationManager.createNewConversation();
+        
         // 获取输入框和发送按钮
         EditText inputText = findViewById(R.id.input_text);
         Button sendButton = findViewById(R.id.btn_send);
