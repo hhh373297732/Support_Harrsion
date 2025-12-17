@@ -1,4 +1,4 @@
-package com.support.harrsion;
+package com.support.harrsion.conversation;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -28,8 +28,8 @@ public class Message implements Serializable {
         return isUser;
     }
     
-    public void setUser(boolean isUser) {
-        this.isUser = isUser;
+    public void setUser(boolean user) {
+        isUser = user;
     }
     
     public Date getTimestamp() {

@@ -1,4 +1,4 @@
-package com.support.harrsion;
+package com.support.harrsion.conversation;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -22,35 +22,12 @@ public class Conversation implements Serializable {
         this.title = "新会话";
     }
     
-    public Conversation(String title) {
-        this.id = generateId();
-        this.messages = new ArrayList<>();
-        this.createdAt = new Date();
-        this.updatedAt = new Date();
-        this.title = title;
-    }
-    
     private String generateId() {
-        return "conv_" + System.currentTimeMillis();
-    }
-    
-    public void addMessage(Message message) {
-        messages.add(message);
-        this.updatedAt = new Date();
-        // 更新会话标题为最新的用户消息
-        if (message.isUser() && message.getContent().length() > 0) {
-            this.title = message.getContent().length() > 20 ? 
-                message.getContent().substring(0, 20) + "..." : 
-                message.getContent();
-        }
+        return "conv_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 1000);
     }
     
     public String getId() {
         return id;
-    }
-    
-    public void setId(String id) {
-        this.id = id;
     }
     
     public String getTitle() {
@@ -65,10 +42,6 @@ public class Conversation implements Serializable {
         return createdAt;
     }
     
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
-    
     public Date getUpdatedAt() {
         return updatedAt;
     }
@@ -79,6 +52,20 @@ public class Conversation implements Serializable {
     
     public List<Message> getMessages() {
         return messages;
+    }
+    
+    public void addMessage(Message message) {
+        this.messages.add(message);
+        this.updatedAt = new Date();
+        
+        // 如果会话标题是默认的，且是用户消息，则用该消息内容作为会话标题
+        if ("新会话".equals(this.title) && message.isUser()) {
+            String newTitle = message.getContent();
+            if (newTitle.length() > 20) {
+                newTitle = newTitle.substring(0, 20) + "...";
+            }
+            this.title = newTitle;
+        }
     }
     
     public void setMessages(List<Message> messages) {
