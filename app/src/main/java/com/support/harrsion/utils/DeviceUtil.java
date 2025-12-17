@@ -210,6 +210,49 @@ public class DeviceUtil {
     }
 
     /**
+     * 复制 assets 目录下的所有文件
+     * @param context
+     * @param assetDir
+     * @param destDir
+     */
+    public static void copyAssetsDir(Context context, String assetDir, File destDir) {
+        try {
+            if (!destDir.exists()) {
+                destDir.mkdirs();
+            }
+
+            AssetManager am = context.getAssets();
+            String[] files = am.list(assetDir);
+            if (files == null) return;
+
+            for (String name : files) {
+                String assetPath = assetDir + "/" + name;
+                File outFile = new File(destDir, name);
+
+                String[] subFiles = am.list(assetPath);
+                if (subFiles != null && subFiles.length > 0) {
+                    // 子目录
+                    copyAssetsDir(context, assetPath, outFile);
+                } else {
+                    // 文件
+                    try (InputStream is = am.open(assetPath);
+                         FileOutputStream fos = new FileOutputStream(outFile)) {
+
+                        byte[] buffer = new byte[4096];
+                        int len;
+                        while ((len = is.read(buffer)) != -1) {
+                            fos.write(buffer, 0, len);
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    /**
      * 截图回调接口
      */
     public interface ScreenshotCallback {

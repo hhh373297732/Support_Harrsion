@@ -4,6 +4,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
 import android.util.Log;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -11,7 +14,10 @@ import android.graphics.Color;
 import android.Manifest;
 import android.os.Bundle;
 import android.view.Gravity;
+
+import androidx.annotation.NonNull;
 import androidx.core.view.GravityCompat;
+
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -20,26 +26,37 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.activity.ComponentActivity;
 import androidx.drawerlayout.widget.DrawerLayout;
-import java.io.IOException;
-import java.io.InputStream;
+
+import java.io.File;
+
 import androidx.lifecycle.ViewModelProvider;
 
+import com.iflytek.aikit.core.AiHandle;
+import com.iflytek.aikit.core.AiHelper;
+import com.iflytek.aikit.core.AiListener;
+import com.iflytek.aikit.core.AiRequest;
+import com.iflytek.aikit.core.AiResponse;
+import com.iflytek.aikit.core.AuthListener;
 import com.support.harrsion.broadcast.TaskBroadcastReceiver;
 import com.support.harrsion.broadcast.WakeUpBroadcastReceiver;
 import com.support.harrsion.service.AgentService;
 import com.support.harrsion.service.ConversationService;
 import com.support.harrsion.service.UIService;
+import com.support.harrsion.utils.DeviceUtil;
 import com.support.harrsion.utils.PermissionUtil;
 import com.support.harrsion.dto.conversation.Conversation;
-import com.support.harrsion.conversation.ConversationManager;
 import com.support.harrsion.dto.conversation.Message;
 import com.support.harrsion.viewModel.SharedViewModel;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends ComponentActivity {
+    private static final String TAG = "MainActivity";
+
     private DrawerLayout mDrawerLayout;
     private LinearLayout messagesContainer;
     private LinearLayout welcomeArea;
@@ -63,7 +80,18 @@ public class MainActivity extends ComponentActivity {
         if (!PermissionUtil.hasRecordPermission(this)) {
             permissionsToRequest.add(Manifest.permission.RECORD_AUDIO);
         }
-
+        if (!PermissionUtil.hasInternetPermission(this)) {
+            permissionsToRequest.add(Manifest.permission.INTERNET);
+        }
+        if (!PermissionUtil.hasWritePermission(this)) {
+            permissionsToRequest.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
+        if (!PermissionUtil.hasReadPermission(this)) {
+            permissionsToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+        }
+        if (!PermissionUtil.hasManagePermission(this)) {
+            permissionsToRequest.add(Manifest.permission.MANAGE_EXTERNAL_STORAGE);
+        }
         if (permissionsToRequest.isEmpty()) {
             WakeUpBroadcastReceiver.startService(this);
         } else {
@@ -76,9 +104,6 @@ public class MainActivity extends ComponentActivity {
         // 获取消息容器和欢迎区域
         messagesContainer = findViewById(R.id.messages_container);
         welcomeArea = findViewById(R.id.welcome_area);
-
-        // 获取会话历史抽屉
-        drawerSessionHistory = findViewById(R.id.drawer_session_history_content);
 
         // 初始化服务
         conversationService = new ConversationService(this, mDrawerLayout, drawerSessionHistory, this);
@@ -94,7 +119,7 @@ public class MainActivity extends ComponentActivity {
         ImageView sessionHistoryButton = findViewById(R.id.btn_session_history);
 
         // 获取会话历史抽屉
-        drawerSessionHistory = findViewById(R.id.drawer_session_history_content);
+        drawerSessionHistory = findViewById(R.id.drawer_session_history);
 
         // 加载当前会话的消息
         conversationService.loadCurrentConversationMessages();
@@ -115,7 +140,7 @@ public class MainActivity extends ComponentActivity {
             }
             return false;
         });
-        
+
         // 监听回车键，处理为发送操作
         inputText.setOnKeyListener((v, keyCode, event) -> {
             // 检查是否是回车键并且是按下事件
@@ -147,7 +172,7 @@ public class MainActivity extends ComponentActivity {
             if (uiState != null) {
                 welcomeArea.setVisibility(uiState.welcomeAreaVisible ? View.VISIBLE : View.GONE);
                 displayMessage(uiState.message, false);
-                
+
                 // 将通知消息添加到当前会话，确保持久化
                 if (uiState.message != null && !uiState.message.isEmpty()) {
                     conversationService.addMessageToCurrentConversation(uiState.message, false);
@@ -161,8 +186,99 @@ public class MainActivity extends ComponentActivity {
         }
 
         taskBroadcastReceiver = new TaskBroadcastReceiver();
+        File resDir = new File(getFilesDir(), "ivw");
+        if (!resDir.exists()) {
+            DeviceUtil.copyAssetsDir(this, "ivw", resDir);
+        }
+        AiHelper.Params params = AiHelper.Params.builder()
+                .appId("4cb2bde0")
+                .apiKey("82ecfdf75ee2cb0863cf49b7a5d239aa")
+                .apiSecret("OTNhZTc5MTJlNjM0NGE0MGUwZjA1YTVi")
+                .workDir(resDir.getAbsolutePath())
+                .ability("e867a88f2")
+                .build();
+        new Thread(() -> AiHelper.getInst().init(this, params)).start();
+//        AiHelper.getInst().registerListener(coreListener);
+        AiHelper.getInst().registerListener("e867a88f2", aiRespListener);
+
+        AiRequest.Builder paramBuilder = AiRequest.builder();
+//paramBuilder.param("wdec_param_nCmThreshold", $paramValue);
+//paramBuilder.param("gramLoad", false);
+        HandlerThread ivwThread = new HandlerThread("ivw-thread");
+        ivwThread.start();
+        Handler mHandler = new Handler(ivwThread.getLooper(), msg -> {
+            Log.i(TAG, "handleMessage: " + msg.toString());
+            // 处理消息
+            switch (msg.what) {
+                case 1:
+                    AiHandle handle = AiHelper.getInst().start("e867a88f2",paramBuilder.build(),null);
+                    if (!handle.isSuccess()) {
+                        Log.e(TAG, "ERROR::START | handle code:" + handle.getCode());
+                    } else {
+                        Log.i(TAG, "识别成功");
+                    }
+                    return true;
+            }
+            return false;
+        });
+        while (true) {
+            mHandler.sendEmptyMessage(1);
+            try {
+                Thread.sleep(1000);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
+    /**
+     * 能力监听回调
+     */
+    private AiListener aiRespListener = new AiListener() {
+        @Override
+        public void onResult(int handleID, List<AiResponse> outputData, Object usrContext) {
+            if (null != outputData && outputData.size() > 0) {
+                Log.i(TAG, "onResult:handleID:" + handleID + ":" + outputData.size() + "," +
+                        "usrContext:" + usrContext);
+                for (int i = 0; i < outputData.size(); i++) {
+                    Log.d(TAG,"onResult:handleID:" + handleID + ":" + outputData.get(i).getKey());
+                    String key   = outputData.get(i).getKey();   //引擎结果的key
+                    byte[] bytes = outputData.get(i).getValue(); //识别结果
+                    String result = new String(bytes);
+                    Log.d(TAG, "key="+key);
+                    Log.d(TAG, "value="+result);
+                    Log.d(TAG, "status="+outputData.get(i).getStatus());
+                    if ((key.equals("func_wake_up") || key.equals("func_pre_wakeup"))) {
+                        Log.d(TAG, key + ": \n " + result);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void onEvent(int handleID, int event, List<AiResponse> eventData, Object usrContext) {
+
+        }
+
+        @Override
+        public void onError(int handleID, int err, String msg, Object usrContext) {
+
+        }
+    };
+
+//    private final AuthListener coreListener = (type, code) -> {
+//        Log.i(TAG, "core listener code:" + code);
+//        switch (type) {
+//            case AUTH:
+//                Log.i(TAG, "SDK状态：授权结果码" + code);
+//                break;
+//            case HTTP:
+//                Log.i(TAG, "SDK状态：HTTP认证结果" + code);
+//                break;
+//            default:
+//                Log.i(TAG, "SDK状态：其他错误");
+//        }
+//    };
 
     @Override
     protected void onStart() {
@@ -210,7 +326,7 @@ public class MainActivity extends ComponentActivity {
 
         TextView emptyTitle = new TextView(this);
         emptyTitle.setLayoutParams(new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         emptyTitle.setText("暂无会话历史");
         emptyTitle.setTextColor(getResources().getColor(R.color.doubao_text_secondary));
         emptyTitle.setTextSize(16);
@@ -220,7 +336,7 @@ public class MainActivity extends ComponentActivity {
 
         TextView emptySubtitle = new TextView(this);
         emptySubtitle.setLayoutParams(new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         emptySubtitle.setText("开始新会话来添加历史记录");
         emptySubtitle.setTextColor(getResources().getColor(R.color.doubao_text_secondary));
         emptySubtitle.setTextSize(14);
@@ -339,7 +455,7 @@ public class MainActivity extends ComponentActivity {
         LinearLayout itemLayout = new LinearLayout(this);
         itemLayout.setOrientation(LinearLayout.VERTICAL);
         itemLayout.setLayoutParams(new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         itemLayout.setPadding(16, 12, 16, 12);
         itemLayout.setClickable(true);
         itemLayout.setFocusable(true);
@@ -364,7 +480,7 @@ public class MainActivity extends ComponentActivity {
         // 会话标题
         TextView titleText = new TextView(this);
         titleText.setLayoutParams(new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         titleText.setText(conversation.getTitle());
         titleText.setTextColor(getResources().getColor(R.color.doubao_text_primary));
         titleText.setTextSize(16);
@@ -375,7 +491,7 @@ public class MainActivity extends ComponentActivity {
         // 会话时间
         TextView timeText = new TextView(this);
         timeText.setLayoutParams(new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         timeText.setText(formatDateTime(conversation.getUpdatedAt()));
         timeText.setTextColor(getResources().getColor(R.color.doubao_text_secondary));
         timeText.setTextSize(12);

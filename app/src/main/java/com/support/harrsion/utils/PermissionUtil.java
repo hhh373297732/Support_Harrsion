@@ -48,6 +48,46 @@ public class PermissionUtil {
     }
 
     /**
+     * 检测网络权限
+     */
+    public static boolean hasInternetPermission(Context context) {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.INTERNET) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    /**
+     * 检测网络权限
+     */
+    public static boolean hasWritePermission(Context context) {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    /**
+     * 检测网络权限
+     */
+    public static boolean hasReadPermission(Context context) {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    /**
+     * 检测网络权限
+     */
+    public static boolean hasManagePermission(Context context) {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.MANAGE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    /**
      * 请求权限
      *
      * @param activity    上下文对象
@@ -59,7 +99,7 @@ public class PermissionUtil {
                 new ActivityResultContracts.RequestMultiplePermissions()
                 , result -> {
                     for (String permission : permissions) {
-                        if(permission.equals(Manifest.permission.RECORD_AUDIO)) {
+                        if (permission.equals(Manifest.permission.RECORD_AUDIO)) {
                             if (Boolean.FALSE.equals(result.getOrDefault(permission, false))) {
                                 WakeUpBroadcastReceiver.initError(activity,
                                         "Microphone/notification permissions are required for this phone");

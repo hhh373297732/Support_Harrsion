@@ -51,7 +51,11 @@ android {
 }
 
 dependencies {
+    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
+//    implementation(files("libs/XTT_AIKit.aar", "libs/IVW_AIKit.aar", "libs/SparkChain.aar"))
+    implementation(files("libs/IVW_AIKit.aar"))
 
+//    implementation files('libs/AIKit.aar')
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
