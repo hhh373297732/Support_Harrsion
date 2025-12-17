@@ -80,6 +80,7 @@
 
         <!-- Main Content Area -->
         <ScrollView
+            android:id="@+id/content_scroll_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_below="@id/top_nav_bar"
@@ -222,7 +223,7 @@
             <EditText
                 android:id="@+id/input_text"
                 android:layout_width="0dp"
-                android:layout_height="50dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:background="@drawable/input_background"
                 android:hint="输入内容..."
@@ -232,12 +233,14 @@
                 android:paddingHorizontal="16dp"
                 android:paddingVertical="8dp"
                 android:layout_marginRight="12dp"
-                android:inputType="text"
-                android:maxLines="1"
+                android:inputType="textMultiLine|textCapSentences"
+                android:maxLines="5"
+                android:minLines="1"
                 android:ellipsize="end"
                 android:focusedByDefault="true"
                 android:imeOptions="actionSend"
-                android:singleLine="true" />
+                android:singleLine="false" 
+                android:scrollbars="vertical" />
 
             <Button
                 android:id="@+id/btn_send"

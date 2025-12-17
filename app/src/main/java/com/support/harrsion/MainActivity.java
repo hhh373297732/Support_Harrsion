@@ -108,6 +108,9 @@ public class MainActivity extends ComponentActivity {
         // 会话历史抽屉按钮点击事件
         sessionHistoryButton.setOnClickListener(v -> openSessionHistoryDrawer());
 
+        // 点击聊天区域隐藏键盘
+        setupKeyboardHiding();
+
         // Load logo image from assets
         loadLogoImage();
 
@@ -381,8 +384,13 @@ public class MainActivity extends ComponentActivity {
      * 打开会话历史抽屉
      */
     private void openSessionHistoryDrawer() {
-        if (mDrawerLayout != null) {
-            mDrawerLayout.openDrawer(R.id.drawer_session_history);
+        try {
+            if (mDrawerLayout != null && findViewById(R.id.drawer_session_history) != null) {
+                mDrawerLayout.openDrawer(Gravity.START);
+            }
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error opening session history drawer: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -401,6 +409,48 @@ public class MainActivity extends ComponentActivity {
             // 关闭输入流
             inputStream.close();
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 设置点击聊天区域隐藏键盘的功能
+     */
+    private void setupKeyboardHiding() {
+        // 获取聊天区域的ScrollView和欢迎区域
+        ScrollView scrollView = findViewById(R.id.content_scroll_view);
+        LinearLayout welcomeArea = findViewById(R.id.welcome_area);
+        LinearLayout messagesContainer = findViewById(R.id.messages_container);
+
+        // 为ScrollView添加点击事件
+        if (scrollView != null) {
+            scrollView.setOnClickListener(v -> hideKeyboard());
+        }
+
+        // 为欢迎区域添加点击事件
+        if (welcomeArea != null) {
+            welcomeArea.setOnClickListener(v -> hideKeyboard());
+        }
+
+        // 为消息容器添加点击事件
+        if (messagesContainer != null) {
+            messagesContainer.setOnClickListener(v -> hideKeyboard());
+        }
+    }
+
+    /**
+     * 隐藏软键盘
+     */
+    private void hideKeyboard() {
+        try {
+            EditText inputText = findViewById(R.id.input_text);
+            if (inputText != null && inputText.isFocused()) {
+                inputText.clearFocus();
+            }
+            android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(getWindow().getDecorView().getWindowToken(), 0);
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error hiding keyboard: " + e.getMessage());
             e.printStackTrace();
         }
     }
