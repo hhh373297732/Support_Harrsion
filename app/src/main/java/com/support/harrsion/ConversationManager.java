@@ -89,9 +89,8 @@ public class ConversationManager {
      */
     public Conversation createNewConversation() {
         Conversation newConversation = new Conversation();
-        conversations.add(newConversation);
+        // 不立即保存，只有当有消息时才保存
         currentConversation = newConversation;
-        saveConversations();
         return newConversation;
     }
     
@@ -123,6 +122,12 @@ public class ConversationManager {
     public void addMessageToCurrentConversation(String content, boolean isUser) {
         Message message = new Message(content, isUser);
         currentConversation.addMessage(message);
+        
+        // 确保当前会话在会话列表中，如果不在则添加
+        if (!conversations.contains(currentConversation)) {
+            conversations.add(currentConversation);
+        }
+        
         saveConversations();
     }
     

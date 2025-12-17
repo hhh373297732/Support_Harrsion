@@ -73,8 +73,14 @@ public class MainActivity extends ComponentActivity {
         // 初始化会话管理器
         conversationManager = new ConversationManager(this);
 
-        // 创建新会话，确保每次打开app都是新会话
-        conversationManager.createNewConversation();
+        // 检查当前会话是否为空，如果不为空则不创建新会话
+        Conversation currentConversation = conversationManager.getCurrentConversation();
+        if (currentConversation.getMessages().isEmpty()) {
+            // 当前会话为空，保持不变
+        } else {
+            // 创建新会话，确保每次打开app都是新会话
+            conversationManager.createNewConversation();
+        }
 
         // 获取输入框和发送按钮
         EditText inputText = findViewById(R.id.input_text);
@@ -200,11 +206,18 @@ public class MainActivity extends ComponentActivity {
             emptySubtitle.setLineSpacing(4, 1);
             drawerSessionHistory.addView(emptySubtitle);
         } else {
-            // 显示会话列表
-            for (int i = conversations.size() - 1; i >= 0; i--) {
+            // 显示最近5条有消息的会话列表
+            int maxHistoryItems = 5;
+            int displayedCount = 0;
+            
+            for (int i = conversations.size() - 1; i >= 0 && displayedCount < maxHistoryItems; i--) {
                 Conversation conversation = conversations.get(i);
-                View sessionItem = createSessionHistoryItem(conversation);
-                drawerSessionHistory.addView(sessionItem);
+                // 只显示有消息的会话
+                if (!conversation.getMessages().isEmpty()) {
+                    View sessionItem = createSessionHistoryItem(conversation);
+                    drawerSessionHistory.addView(sessionItem);
+                    displayedCount++;
+                }
             }
         }
     }
