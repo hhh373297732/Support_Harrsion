@@ -37,8 +37,10 @@ public class AgentService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String task = intent.getStringExtra("task");
-        agent.run(task);
+        if (intent != null) {
+            String task = intent.getStringExtra("task");
+            agent.run(task);
+        }
 
         return START_STICKY;
     }

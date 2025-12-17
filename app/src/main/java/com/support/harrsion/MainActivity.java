@@ -126,6 +126,12 @@ public class MainActivity extends ComponentActivity {
             if (uiState != null) {
                 welcomeArea.setVisibility(uiState.welcomeAreaVisible ? View.VISIBLE : View.GONE);
                 displayMessage(uiState.message, false);
+                
+                // 将通知消息添加到当前会话，确保持久化
+                if (uiState.message != null && !uiState.message.isEmpty()) {
+                    conversationManager.addMessageToCurrentConversation(uiState.message, false);
+                    updateSessionHistoryDrawer();
+                }
             }
         });
 
@@ -249,7 +255,7 @@ public class MainActivity extends ComponentActivity {
             // 加载选中会话的消息
             loadCurrentConversationMessages();
             // 关闭抽屉
-            mDrawerLayout.closeDrawer(R.id.drawer_session_history);
+            mDrawerLayout.closeDrawer(Gravity.START);
         });
 
         // 会话标题
