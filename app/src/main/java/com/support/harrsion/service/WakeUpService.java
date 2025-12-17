@@ -1,24 +1,19 @@
 package com.support.harrsion.service;
 
 import android.app.Notification;
-import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
-
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
-
 import com.support.harrsion.MainActivity;
 import com.support.harrsion.R;
-import com.support.harrsion.agent.utils.DeviceUtil;
-
-import ai.picovoice.porcupine.Porcupine;
+import com.support.harrsion.broadcast.WakeUpBroadcastReceiver;
+import com.support.harrsion.utils.DeviceUtil;
 import ai.picovoice.porcupine.PorcupineActivationException;
 import ai.picovoice.porcupine.PorcupineActivationLimitException;
 import ai.picovoice.porcupine.PorcupineActivationRefusedException;
@@ -96,7 +91,7 @@ public class WakeUpService extends Service {
     }
 
     private void onPorcupineInitError(String message) {
-        Intent i = new Intent("PorcupineInitError");
+        Intent i = new Intent(WakeUpBroadcastReceiver.ACTION_WAKE_UP);
         Log.e("PORCUPINE", "porcupine init error: " + message);
         i.putExtra("errorMessage", message);
         sendBroadcast(i);

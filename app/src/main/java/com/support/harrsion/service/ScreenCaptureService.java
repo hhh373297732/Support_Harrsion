@@ -24,7 +24,7 @@ import android.view.Display;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-import com.support.harrsion.agent.utils.DeviceUtil;
+import com.support.harrsion.utils.DeviceUtil;
 import com.support.harrsion.config.AppConfig;
 import com.support.harrsion.dto.screenshot.Screenshot;
 

@@ -8,8 +8,9 @@ import com.openai.models.chat.completions.ChatCompletionMessageParam;
 import com.support.harrsion.agent.action.ActionHandle;
 import com.support.harrsion.agent.model.MessageBuilder;
 import com.support.harrsion.agent.model.ModelClient;
-import com.support.harrsion.agent.utils.DeviceUtil;
-import com.support.harrsion.agent.utils.MessageParseUtil;
+import com.support.harrsion.broadcast.TaskBroadcastReceiver;
+import com.support.harrsion.utils.DeviceUtil;
+import com.support.harrsion.utils.MessageParseUtil;
 import com.support.harrsion.config.AppConfig;
 import com.support.harrsion.dto.action.ActionResult;
 import com.support.harrsion.dto.agent.AgentConfig;
@@ -190,19 +191,10 @@ public class Agent implements DeviceUtil.ScreenshotCallback {
                         String.format("<think>%s</think><answer>%s</answer>",
                                 response.getThinking(), response.getAction())));
 
-                Boolean finished;
                 String metadata = String.valueOf(action.get("_metadata"));
-                Log.d("Agent", "当前action metadata: " + metadata);
-                Log.d("Agent", "result.getShouldFinish(): " + result.getShouldFinish());
-                Log.d("Agent", "result.getMessage(): " + result.getMessage());
                 
                 // 检查是否应该完成任务
-                if (metadata.equals("finish") || result.getShouldFinish() || metadata.contains("finish")) {
-                    finished = true;
-                } else {
-                    finished = false;
-                }
-                Log.d("Agent", "最终任务完成状态: " + finished);
+                boolean finished = metadata.equals("finish") || result.getShouldFinish() || metadata.contains("finish");
 
                 if (finished) {
                     String completionMessage;
@@ -217,29 +209,15 @@ public class Agent implements DeviceUtil.ScreenshotCallback {
                         completionMessage = "任务完成！";
                     }
                     
-                    Log.d("Agent", "最终使用的完成消息: " + completionMessage);
-                    
                     if (agentConfig.getVerbose()) {
                         Log.d("Agent", "🎉 " + "=".repeat(47));
                         Log.d("Agent", "✅ task_completed：" + completionMessage);
                         Log.d("Agent", "=".repeat(50));
                     }
-                    
-                    // 发送全局广播，将结果传递给MainActivity
-                    Log.d("Agent", "准备发送任务完成全局广播...");
-                    Intent broadcastIntent = new Intent("com.support.harrsion.AGENT_TASK_COMPLETED");
+
+                    Intent broadcastIntent = new Intent(TaskBroadcastReceiver.ACTION_TASK_COMPLETED);
                     broadcastIntent.putExtra("result_message", completionMessage);
-                    broadcastIntent.setFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
-                    
-                    // 指定广播只发送给当前应用程序
-                    broadcastIntent.setPackage(appContext.getPackageName());
-                    
-                    Log.d("Agent", "全局广播消息内容: " + completionMessage);
-                    Log.d("Agent", "全局广播Intent: " + broadcastIntent);
-                    Log.d("Agent", "全局广播Action: " + broadcastIntent.getAction());
-                    Log.d("Agent", "全局广播Flags: " + broadcastIntent.getFlags());
-                    Log.d("Agent", "全局广播Package: " + broadcastIntent.getPackage());
-                    
+
                     try {
                         appContext.sendBroadcast(broadcastIntent);
                         Log.d("Agent", "任务完成全局广播已发送");

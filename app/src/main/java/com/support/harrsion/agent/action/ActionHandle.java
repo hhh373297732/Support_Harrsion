@@ -8,7 +8,7 @@ import android.os.Looper;
 import android.widget.Toast;
 
 import com.alibaba.fastjson2.JSON;
-import com.support.harrsion.agent.utils.DeviceUtil;
+import com.support.harrsion.utils.DeviceUtil;
 import com.support.harrsion.config.AppPackage;
 import com.support.harrsion.dto.action.ActionResult;
 import com.support.harrsion.service.ActionService;
