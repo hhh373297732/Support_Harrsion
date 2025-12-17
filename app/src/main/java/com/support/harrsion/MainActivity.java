@@ -11,6 +11,7 @@ import android.graphics.Color;
 import android.Manifest;
 import android.os.Bundle;
 import android.view.Gravity;
+import androidx.core.view.GravityCompat;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -28,6 +29,8 @@ import androidx.lifecycle.ViewModelProvider;
 import com.support.harrsion.broadcast.TaskBroadcastReceiver;
 import com.support.harrsion.broadcast.WakeUpBroadcastReceiver;
 import com.support.harrsion.service.AgentService;
+import com.support.harrsion.service.ConversationService;
+import com.support.harrsion.service.UIService;
 import com.support.harrsion.utils.PermissionUtil;
 import com.support.harrsion.dto.conversation.Conversation;
 import com.support.harrsion.conversation.ConversationManager;
@@ -41,7 +44,8 @@ public class MainActivity extends ComponentActivity {
     private LinearLayout messagesContainer;
     private LinearLayout welcomeArea;
     private Context appContext;
-    private ConversationManager conversationManager;
+    private ConversationService conversationService;
+    private UIService uiService;
     private LinearLayout drawerSessionHistory;
     private TaskBroadcastReceiver taskBroadcastReceiver;
 
@@ -73,17 +77,15 @@ public class MainActivity extends ComponentActivity {
         messagesContainer = findViewById(R.id.messages_container);
         welcomeArea = findViewById(R.id.welcome_area);
 
-        // 初始化会话管理器
-        conversationManager = new ConversationManager(this);
+        // 获取会话历史抽屉
+        drawerSessionHistory = findViewById(R.id.drawer_session_history_content);
+
+        // 初始化服务
+        conversationService = new ConversationService(this, mDrawerLayout, drawerSessionHistory, this);
+        uiService = new UIService(this, this);
 
         // 检查当前会话是否为空，如果不为空则不创建新会话
-        Conversation currentConversation = conversationManager.getCurrentConversation();
-        if (currentConversation.getMessages().isEmpty()) {
-            // 当前会话为空，保持不变
-        } else {
-            // 创建新会话，确保每次打开app都是新会话
-            conversationManager.createNewConversation();
-        }
+        conversationService.initConversation();
 
         // 获取输入框和发送按钮
         EditText inputText = findViewById(R.id.input_text);
@@ -95,10 +97,10 @@ public class MainActivity extends ComponentActivity {
         drawerSessionHistory = findViewById(R.id.drawer_session_history_content);
 
         // 加载当前会话的消息
-        loadCurrentConversationMessages();
+        conversationService.loadCurrentConversationMessages();
 
         // 更新会话历史抽屉
-        updateSessionHistoryDrawer();
+        conversationService.updateSessionHistoryDrawer();
 
         // 新会话按钮点击事件
         newSessionButton.setOnClickListener(v -> createNewSession(inputText));
@@ -128,16 +130,16 @@ public class MainActivity extends ComponentActivity {
         });
 
         // 会话历史抽屉按钮点击事件
-        sessionHistoryButton.setOnClickListener(v -> openSessionHistoryDrawer());
+        sessionHistoryButton.setOnClickListener(v -> conversationService.openSessionHistoryDrawer());
 
         // 首页提示词点击事件
-        setupPromptWordsListeners(inputText);
+        uiService.setupPromptWordsListeners(inputText);
 
         // 点击聊天区域隐藏键盘
-        setupKeyboardHiding();
+        uiService.setupKeyboardHiding();
 
         // Load logo image from assets
-        loadLogoImage();
+        uiService.loadLogoImage();
 
         SharedViewModel sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
         // 观察UI状态的变化
@@ -148,8 +150,7 @@ public class MainActivity extends ComponentActivity {
                 
                 // 将通知消息添加到当前会话，确保持久化
                 if (uiState.message != null && !uiState.message.isEmpty()) {
-                    conversationManager.addMessageToCurrentConversation(uiState.message, false);
-                    updateSessionHistoryDrawer();
+                    conversationService.addMessageToCurrentConversation(uiState.message, false);
                 }
             }
         });
@@ -181,8 +182,8 @@ public class MainActivity extends ComponentActivity {
     /**
      * 加载当前会话的消息
      */
-    private void loadCurrentConversationMessages() {
-        Conversation currentConversation = conversationManager.getCurrentConversation();
+    public void loadCurrentConversationMessages() {
+        Conversation currentConversation = conversationService.getCurrentConversation();
         if (currentConversation != null && !currentConversation.getMessages().isEmpty()) {
             welcomeArea.setVisibility(View.GONE);
             messagesContainer.removeAllViews();
@@ -196,109 +197,38 @@ public class MainActivity extends ComponentActivity {
     }
 
     /**
-     * 更新会话历史抽屉
+     * 显示空会话历史
      */
-    private void updateSessionHistoryDrawer() {
-        List<Conversation> conversations = conversationManager.getAllConversations();
-        drawerSessionHistory.removeAllViews();
+    public void showEmptySessionHistory(LinearLayout container) {
+        // 显示空状态
+        ImageView emptyIcon = new ImageView(this);
+        emptyIcon.setLayoutParams(new LinearLayout.LayoutParams(80, 80));
+        emptyIcon.setImageResource(android.R.drawable.ic_dialog_info);
+        emptyIcon.setAlpha(0.5f);
+        emptyIcon.setPadding(0, 24, 0, 24);
+        container.addView(emptyIcon);
 
-        if (conversations.isEmpty()) {
-            // 显示空状态
-            ImageView emptyIcon = new ImageView(this);
-            emptyIcon.setLayoutParams(new LinearLayout.LayoutParams(80, 80));
-            emptyIcon.setImageResource(android.R.drawable.ic_dialog_info);
-            emptyIcon.setAlpha(0.5f);
-            emptyIcon.setPadding(0, 24, 0, 24);
-            drawerSessionHistory.addView(emptyIcon);
+        TextView emptyTitle = new TextView(this);
+        emptyTitle.setLayoutParams(new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        emptyTitle.setText("暂无会话历史");
+        emptyTitle.setTextColor(getResources().getColor(R.color.doubao_text_secondary));
+        emptyTitle.setTextSize(16);
+        emptyTitle.setGravity(Gravity.CENTER);
+        emptyTitle.setPadding(0, 0, 0, 8);
+        container.addView(emptyTitle);
 
-            TextView emptyTitle = new TextView(this);
-            emptyTitle.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-            emptyTitle.setText("暂无会话历史");
-            emptyTitle.setTextColor(getResources().getColor(R.color.doubao_text_secondary));
-            emptyTitle.setTextSize(16);
-            emptyTitle.setGravity(Gravity.CENTER);
-            emptyTitle.setPadding(0, 0, 0, 8);
-            drawerSessionHistory.addView(emptyTitle);
-
-            TextView emptySubtitle = new TextView(this);
-            emptySubtitle.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-            emptySubtitle.setText("开始新会话来添加历史记录");
-            emptySubtitle.setTextColor(getResources().getColor(R.color.doubao_text_secondary));
-            emptySubtitle.setTextSize(14);
-            emptySubtitle.setGravity(Gravity.CENTER);
-            emptySubtitle.setLineSpacing(4, 1);
-            drawerSessionHistory.addView(emptySubtitle);
-        } else {
-            // 显示最近5条有消息的会话列表
-            int maxHistoryItems = 5;
-            int displayedCount = 0;
-            
-            for (int i = conversations.size() - 1; i >= 0 && displayedCount < maxHistoryItems; i--) {
-                Conversation conversation = conversations.get(i);
-                // 只显示有消息的会话
-                if (!conversation.getMessages().isEmpty()) {
-                    View sessionItem = createSessionHistoryItem(conversation);
-                    drawerSessionHistory.addView(sessionItem);
-                    displayedCount++;
-                }
-            }
-        }
+        TextView emptySubtitle = new TextView(this);
+        emptySubtitle.setLayoutParams(new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        emptySubtitle.setText("开始新会话来添加历史记录");
+        emptySubtitle.setTextColor(getResources().getColor(R.color.doubao_text_secondary));
+        emptySubtitle.setTextSize(14);
+        emptySubtitle.setGravity(Gravity.CENTER);
+        emptySubtitle.setLineSpacing(4, 1);
+        container.addView(emptySubtitle);
     }
 
-    /**
-     * 创建会话历史项视图
-     */
-    private View createSessionHistoryItem(Conversation conversation) {
-        LinearLayout itemLayout = new LinearLayout(this);
-        itemLayout.setOrientation(LinearLayout.VERTICAL);
-        itemLayout.setLayoutParams(new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-        itemLayout.setPadding(16, 12, 16, 12);
-        itemLayout.setClickable(true);
-        itemLayout.setFocusable(true);
-        // 设置点击效果
-        android.util.TypedValue outValue = new android.util.TypedValue();
-        getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue, true);
-        itemLayout.setForeground(getResources().getDrawable(outValue.resourceId, getTheme()));
-        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) itemLayout.getLayoutParams();
-        params.setMargins(4, 0, 4, 8);
-        itemLayout.setLayoutParams(params);
-
-        // 添加点击事件
-        itemLayout.setOnClickListener(v -> {
-            // 切换到选中的会话
-            conversationManager.setCurrentConversation(conversation);
-            // 加载选中会话的消息
-            loadCurrentConversationMessages();
-            // 关闭抽屉
-            mDrawerLayout.closeDrawer(Gravity.START);
-        });
-
-        // 会话标题
-        TextView titleText = new TextView(this);
-        titleText.setLayoutParams(new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-        titleText.setText(conversation.getTitle());
-        titleText.setTextColor(getResources().getColor(R.color.doubao_text_primary));
-        titleText.setTextSize(16);
-        titleText.setMaxLines(1);
-        titleText.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        itemLayout.addView(titleText);
-
-        // 会话时间
-        TextView timeText = new TextView(this);
-        timeText.setLayoutParams(new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-        timeText.setText(formatDateTime(conversation.getUpdatedAt()));
-        timeText.setTextColor(getResources().getColor(R.color.doubao_text_secondary));
-        timeText.setTextSize(12);
-        timeText.setPadding(0, 4, 0, 0);
-        itemLayout.addView(timeText);
-
-        return itemLayout;
-    }
 
     /**
      * 格式化日期时间
@@ -311,20 +241,17 @@ public class MainActivity extends ComponentActivity {
     /**
      * 发送消息
      */
-    private void sendMessage(EditText inputText) {
+    public void sendMessage(EditText inputText) {
         String message = inputText.getText().toString().trim();
         if (!message.isEmpty()) {
             welcomeArea.setVisibility(View.GONE);
             displayMessage(message, true);
 
             // 将消息添加到当前会话
-            conversationManager.addMessageToCurrentConversation(message, true);
+            conversationService.addMessageToCurrentConversation(message, true);
 
             // 清空输入框
             inputText.setText("");
-
-            // 更新会话历史抽屉
-            updateSessionHistoryDrawer();
 
             Intent intent = new Intent(getApplicationContext(), AgentService.class);
             intent.putExtra("task", message);
@@ -390,19 +317,10 @@ public class MainActivity extends ComponentActivity {
     /**
      * 创建新会话
      */
-    private void createNewSession(EditText inputText) {
+    public void createNewSession(EditText inputText) {
         String currentInput = inputText.getText().toString().trim();
-        if (!currentInput.isEmpty()) {
-            // 将当前输入记录添加到当前会话
-            conversationManager.addMessageToCurrentConversation(currentInput, true);
-            // 显示消息
-            displayMessage(currentInput, true);
-            // 更新会话历史抽屉
-            updateSessionHistoryDrawer();
-        }
-
-        // 创建新会话
-        conversationManager.createNewConversation();
+        // 使用会话服务创建新会话
+        conversationService.createNewSession(currentInput);
 
         // 清空当前输入
         inputText.setText("");
@@ -412,109 +330,59 @@ public class MainActivity extends ComponentActivity {
         welcomeArea.setVisibility(View.VISIBLE);
         // 提示用户已开始新会话
         Toast.makeText(this, "已开始新会话", Toast.LENGTH_SHORT).show();
-
-        // 更新会话历史抽屉
-        updateSessionHistoryDrawer();
     }
 
     /**
-     * 打开会话历史抽屉
+     * 创建会话历史项视图
      */
-    private void openSessionHistoryDrawer() {
-        try {
-            if (mDrawerLayout != null && findViewById(R.id.drawer_session_history) != null) {
-                mDrawerLayout.openDrawer(Gravity.START);
-            }
-        } catch (Exception e) {
-            Log.e("MainActivity", "Error opening session history drawer: " + e.getMessage());
-            e.printStackTrace();
-        }
+    public View createSessionHistoryItem(Conversation conversation) {
+        LinearLayout itemLayout = new LinearLayout(this);
+        itemLayout.setOrientation(LinearLayout.VERTICAL);
+        itemLayout.setLayoutParams(new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        itemLayout.setPadding(16, 12, 16, 12);
+        itemLayout.setClickable(true);
+        itemLayout.setFocusable(true);
+        // 设置点击效果
+        android.util.TypedValue outValue = new android.util.TypedValue();
+        getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue, true);
+        itemLayout.setForeground(getResources().getDrawable(outValue.resourceId, getTheme()));
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) itemLayout.getLayoutParams();
+        params.setMargins(4, 0, 4, 8);
+        itemLayout.setLayoutParams(params);
+
+        // 添加点击事件
+        itemLayout.setOnClickListener(v -> {
+            // 切换到选中的会话
+            conversationService.setCurrentConversation(conversation);
+            // 加载选中会话的消息
+            loadCurrentConversationMessages();
+            // 关闭抽屉
+            mDrawerLayout.closeDrawer(GravityCompat.START);
+        });
+
+        // 会话标题
+        TextView titleText = new TextView(this);
+        titleText.setLayoutParams(new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        titleText.setText(conversation.getTitle());
+        titleText.setTextColor(getResources().getColor(R.color.doubao_text_primary));
+        titleText.setTextSize(16);
+        titleText.setMaxLines(1);
+        titleText.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        itemLayout.addView(titleText);
+
+        // 会话时间
+        TextView timeText = new TextView(this);
+        timeText.setLayoutParams(new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        timeText.setText(formatDateTime(conversation.getUpdatedAt()));
+        timeText.setTextColor(getResources().getColor(R.color.doubao_text_secondary));
+        timeText.setTextSize(12);
+        timeText.setPadding(0, 4, 0, 0);
+        itemLayout.addView(timeText);
+
+        return itemLayout;
     }
 
-    /**
-     * 从assets加载logo图片
-     */
-    private void loadLogoImage() {
-        ImageView logoImage = findViewById(R.id.logo_image);
-        try {
-            // 从assets文件夹中打开图片文件
-            InputStream inputStream = getAssets().open("logo.png");
-            // 将输入流解码为Bitmap
-            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-            // 设置图片到ImageView
-            logoImage.setImageBitmap(bitmap);
-            // 关闭输入流
-            inputStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * 设置首页提示词点击事件
-     */
-    private void setupPromptWordsListeners(EditText inputText) {
-        TextView prompt1 = findViewById(R.id.prompt_1);
-        TextView prompt2 = findViewById(R.id.prompt_2);
-        
-        // 创建通用的点击处理逻辑
-        View.OnClickListener promptClickListener = v -> {
-            if (v instanceof TextView) {
-                String promptText = ((TextView) v).getText().toString();
-                inputText.setText(promptText);
-                sendMessage(inputText);
-            }
-        };
-        
-        // 为提示词设置点击事件
-        if (prompt1 != null) {
-            prompt1.setOnClickListener(promptClickListener);
-        }
-        
-        if (prompt2 != null) {
-            prompt2.setOnClickListener(promptClickListener);
-        }
-    }
-    
-    /**
-     * 设置点击聊天区域隐藏键盘的功能
-     */
-    private void setupKeyboardHiding() {
-        // 获取聊天区域的ScrollView和欢迎区域
-        ScrollView scrollView = findViewById(R.id.content_scroll_view);
-        LinearLayout welcomeArea = findViewById(R.id.welcome_area);
-        LinearLayout messagesContainer = findViewById(R.id.messages_container);
-
-        // 为ScrollView添加点击事件
-        if (scrollView != null) {
-            scrollView.setOnClickListener(v -> hideKeyboard());
-        }
-
-        // 为欢迎区域添加点击事件
-        if (welcomeArea != null) {
-            welcomeArea.setOnClickListener(v -> hideKeyboard());
-        }
-
-        // 为消息容器添加点击事件
-        if (messagesContainer != null) {
-            messagesContainer.setOnClickListener(v -> hideKeyboard());
-        }
-    }
-
-    /**
-     * 隐藏软键盘
-     */
-    private void hideKeyboard() {
-        try {
-            EditText inputText = findViewById(R.id.input_text);
-            if (inputText != null && inputText.isFocused()) {
-                inputText.clearFocus();
-            }
-            android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(getWindow().getDecorView().getWindowToken(), 0);
-        } catch (Exception e) {
-            Log.e("MainActivity", "Error hiding keyboard: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
 }
