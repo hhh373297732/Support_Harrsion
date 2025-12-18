@@ -1,19 +1,26 @@
 package com.support.harrsion.utils;
 
+import android.Manifest;
+import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.os.Build;
+import android.util.Log;
 
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 
-import com.support.harrsion.MainActivity;
+import com.iflytek.aikit.core.AiHelper;
 import com.support.harrsion.R;
 import com.support.harrsion.dto.screenshot.Screenshot;
+import com.support.harrsion.dto.xtts.XTTSParams;
+import com.support.harrsion.manager.IVWManager;
+import com.support.harrsion.manager.XTTSManager;
 import com.support.harrsion.service.ScreenCaptureService;
 
 import java.io.File;
@@ -207,6 +214,95 @@ public class DeviceUtil {
             } catch (IOException ignored) {
             }
         }
+    }
+
+    /**
+     * 复制 assets 目录下的所有文件
+     * @param context
+     * @param assetDir
+     * @param destDir
+     */
+    public static void copyAssetsDir(Context context, String assetDir, File destDir) {
+        try {
+            if (!destDir.exists()) {
+                destDir.mkdirs();
+            }
+
+            AssetManager am = context.getAssets();
+            String[] files = am.list(assetDir);
+            if (files == null) return;
+
+            for (String name : files) {
+                String assetPath = assetDir + "/" + name;
+                File outFile = new File(destDir, name);
+
+                String[] subFiles = am.list(assetPath);
+                if (subFiles != null && subFiles.length > 0) {
+                    // 子目录
+                    copyAssetsDir(context, assetPath, outFile);
+                } else {
+                    // 文件
+                    try (InputStream is = am.open(assetPath);
+                         FileOutputStream fos = new FileOutputStream(outFile)) {
+
+                        byte[] buffer = new byte[4096];
+                        int len;
+                        while ((len = is.read(buffer)) != -1) {
+                            fos.write(buffer, 0, len);
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void startWakeUpService(Activity activity) {
+        if (ActivityCompat.checkSelfPermission(activity,
+                Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        File resDir = new File(activity.getFilesDir(), "kdxf");
+        if (!resDir.exists()) {
+            DeviceUtil.copyAssetsDir(activity, "kdxf", resDir);
+        } else {
+            // todo: 提示词测试阶段，临时使用，不然提示词修改不会生效
+            DeviceUtil.copyAssetsDir(activity, "kdxf", resDir);
+        }
+        AiHelper.Params params = AiHelper.Params.builder()
+                .appId("xxx")
+                .apiKey("xxx")
+                .apiSecret("xxx")
+                .workDir(resDir.getAbsolutePath())
+                .ability("e867a88f2;e2e44feff")
+                .build();
+        AiHelper.getInst().init(activity, params);
+        XTTSManager xttsManager = new XTTSManager(new XTTSManager.XTTSCallback() {
+            @Override
+            public void onError(int code, String msg) {
+                Log.d("XTTSManager", msg);
+            }
+
+            @Override
+            public void onProgress(int pos, int len) {
+                // 更新进度条 UI
+            }
+        });
+        IVWManager ivwManager = new IVWManager();
+        ivwManager.start(resDir.getAbsolutePath() + "/ivw/keyword.txt", new IVWManager.IVWCallback() {
+            @Override
+            public void onWakeup(String result) {
+                Log.d("WakeUpBroadcastReceiver", "onWakeup: " + result);
+                xttsManager.startSpeaking("我是小白，有什么吩咐吗？", new XTTSParams());
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.d("WakeUpBroadcastReceiver", "onError: " + error);
+            }
+        });
     }
 
     /**

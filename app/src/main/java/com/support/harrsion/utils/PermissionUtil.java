@@ -15,8 +15,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.app.ActivityCompat;
 
-import com.support.harrsion.broadcast.WakeUpBroadcastReceiver;
-import com.support.harrsion.config.AppConfig;
 import com.support.harrsion.service.ActionService;
 import com.support.harrsion.service.ScreenCaptureService;
 
@@ -60,12 +58,7 @@ public class PermissionUtil {
                 , result -> {
                     for (String permission : permissions) {
                         if(permission.equals(Manifest.permission.RECORD_AUDIO)) {
-                            if (Boolean.FALSE.equals(result.getOrDefault(permission, false))) {
-                                WakeUpBroadcastReceiver.initError(activity,
-                                        "Microphone/notification permissions are required for this phone");
-                            } else {
-                                WakeUpBroadcastReceiver.startService(activity);
-                            }
+                            DeviceUtil.startWakeUpService(activity);
                         }
                     }
                     Toast.makeText(activity, "权限已允许", Toast.LENGTH_SHORT).show();

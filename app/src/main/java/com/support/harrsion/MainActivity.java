@@ -5,12 +5,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 import android.util.Log;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.Manifest;
 import android.os.Bundle;
 import android.view.Gravity;
+
 import androidx.core.view.GravityCompat;
 import android.view.View;
 import android.widget.Button;
@@ -22,22 +21,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.ComponentActivity;
 import androidx.drawerlayout.widget.DrawerLayout;
-import java.io.IOException;
-import java.io.InputStream;
+
 import androidx.lifecycle.ViewModelProvider;
 
 import com.support.harrsion.broadcast.TaskBroadcastReceiver;
-import com.support.harrsion.broadcast.WakeUpBroadcastReceiver;
 import com.support.harrsion.service.AgentService;
 import com.support.harrsion.service.ConversationService;
 import com.support.harrsion.service.UIService;
+import com.support.harrsion.utils.DeviceUtil;
 import com.support.harrsion.utils.PermissionUtil;
 import com.support.harrsion.dto.conversation.Conversation;
-import com.support.harrsion.conversation.ConversationManager;
 import com.support.harrsion.dto.conversation.Message;
 import com.support.harrsion.viewModel.SharedViewModel;
 import java.util.ArrayList;
-import java.util.List;
 
 public class MainActivity extends ComponentActivity {
     private DrawerLayout mDrawerLayout;
@@ -65,7 +61,7 @@ public class MainActivity extends ComponentActivity {
         }
 
         if (permissionsToRequest.isEmpty()) {
-            WakeUpBroadcastReceiver.startService(this);
+            DeviceUtil.startWakeUpService(this);
         } else {
             PermissionUtil.requestPermissions(this, permissionsToRequest.toArray(new String[0]));
         }
