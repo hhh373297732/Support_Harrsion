@@ -3,27 +3,29 @@ package com.support.harrsion;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.util.Log;
 import android.graphics.Color;
 import android.Manifest;
 import android.os.Bundle;
 import android.view.Gravity;
-
-import androidx.core.view.GravityCompat;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.ComponentActivity;
 import androidx.drawerlayout.widget.DrawerLayout;
 
+import androidx.core.view.GravityCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.support.harrsion.broadcast.TaskBroadcastReceiver;
@@ -46,11 +48,35 @@ public class MainActivity extends ComponentActivity {
     private UIService uiService;
     private LinearLayout drawerSessionHistory;
     private TaskBroadcastReceiver taskBroadcastReceiver;
+    private SharedPreferences sharedPreferences;
+    private SharedPreferences.Editor editor;
+
+    // SharedPreferences keys
+    private static final String PREFS_NAME = "ModelSettings";
+    private static final String PREF_MODEL_NAME = "modelName";
+    private static final String PREF_API_KEY = "apiKey";
+    private static final String PREF_SELECTED_MODEL_INDEX = "selectedModelIndex";
+
+    // Model options and corresponding URLs
+    private static final String[][] MODEL_OPTIONS = {
+        {"智谱 (autoglm-phone)", "https://open.bigmodel.cn/api/paas/v4", "autoglm-phone"},
+        {"OpenAI (gpt-4)", "https://api.openai.com/v1", "gpt-4"},
+        {"自定义", "", "custom-model"}
+    };
+
+    // UI elements for settings
+    private Spinner modelSpinner;
+    private EditText apiKeyInput;
+    private Button saveSettingsButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Initialize SharedPreferences
+        sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        editor = sharedPreferences.edit();
 
         PermissionUtil.requestScreenCapturePermission(this);
 
@@ -112,6 +138,9 @@ public class MainActivity extends ComponentActivity {
             Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
         });
 
+        // Initialize settings UI elements
+        initSettingsElements();
+
         // 新会话按钮点击事件
         newSessionButton.setOnClickListener(v -> createNewSession(inputText));
         // 发送按钮点击事件
@@ -143,7 +172,10 @@ public class MainActivity extends ComponentActivity {
         sessionHistoryButton.setOnClickListener(v -> conversationService.openSessionHistoryDrawer());
         
         // 设置按钮点击事件
-        settingsButton.setOnClickListener(v -> mDrawerLayout.openDrawer(GravityCompat.END));
+        settingsButton.setOnClickListener(v -> {
+            loadSavedSettings();
+            mDrawerLayout.openDrawer(GravityCompat.END);
+        });
 
         // 首页提示词点击事件
         uiService.setupPromptWordsListeners(inputText);
@@ -433,4 +465,69 @@ public class MainActivity extends ComponentActivity {
         return itemLayout;
     }
 
+    /**
+     * 加载保存的设置
+     */
+    private void loadSavedSettings() {
+        // 加载选择的模型索引
+        int selectedModelIndex = sharedPreferences.getInt(PREF_SELECTED_MODEL_INDEX, 0);
+        modelSpinner.setSelection(selectedModelIndex);
+
+        // 加载API Key
+        String apiKey = sharedPreferences.getString(PREF_API_KEY, "");
+        apiKeyInput.setText(apiKey);
+    }
+
+    /**
+     * 初始化设置界面的UI元素
+     */
+    private void initSettingsElements() {
+        modelSpinner = findViewById(R.id.model_spinner);
+        apiKeyInput = findViewById(R.id.api_key_input);
+        saveSettingsButton = findViewById(R.id.save_settings_button);
+
+        // 为模型选择器设置监听器
+        modelSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                // 模型选择变化时，不需要再填充URL
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Do nothing
+            }
+        });
+
+        // 设置保存按钮点击事件
+        saveSettingsButton.setOnClickListener(v -> {
+            saveSettings();
+            Toast.makeText(this, "设置已保存", Toast.LENGTH_SHORT).show();
+            mDrawerLayout.closeDrawer(GravityCompat.END);
+        });
+    }
+
+    /**
+     * 保存设置
+     */
+    private void saveSettings() {
+        int selectedModelIndex = modelSpinner.getSelectedItemPosition();
+        editor.putInt(PREF_SELECTED_MODEL_INDEX, selectedModelIndex);
+
+        // 保存API Key
+        String apiKey = apiKeyInput.getText().toString().trim();
+        editor.putString(PREF_API_KEY, apiKey);
+
+        // 根据选择的模型确定模型名称
+        String modelName = MODEL_OPTIONS[selectedModelIndex][2];
+        editor.putString(PREF_MODEL_NAME, modelName);
+
+        editor.apply();
+    }
+
 }
+
+
+
+
+

@@ -1,3 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Support Harrsion</string>
+    <string name="model_prompt">请选择模型</string>
+    <string-array name="model_options">
+        <item>智谱 (autoglm-phone)</item>
+        <item>OpenAI (gpt-4)</item>
+        <item>自定义</item>
+    </string-array>
 </resources>
