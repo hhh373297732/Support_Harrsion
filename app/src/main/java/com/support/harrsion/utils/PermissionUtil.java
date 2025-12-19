@@ -58,7 +58,7 @@ public class PermissionUtil {
                 , result -> {
                     for (String permission : permissions) {
                         if(permission.equals(Manifest.permission.RECORD_AUDIO)) {
-                            DeviceUtil.startWakeUpService(activity);
+                            DeviceUtil.startWakeUpService(activity, false);
                         }
                     }
                     Toast.makeText(activity, "权限已允许", Toast.LENGTH_SHORT).show();

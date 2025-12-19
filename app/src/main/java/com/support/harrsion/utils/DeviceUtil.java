@@ -258,7 +258,7 @@ public class DeviceUtil {
         }
     }
 
-    public static void startWakeUpService(Activity activity) {
+    public static void startWakeUpService(Activity activity, boolean isVoiceEnabled) {
         if (ActivityCompat.checkSelfPermission(activity,
                 Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             return;
@@ -271,38 +271,50 @@ public class DeviceUtil {
             // todo: 提示词测试阶段，临时使用，不然提示词修改不会生效
             DeviceUtil.copyAssetsDir(activity, "kdxf", resDir);
         }
-        AiHelper.Params params = AiHelper.Params.builder()
-                .appId("xxx")
-                .apiKey("xxx")
-                .apiSecret("xxx")
-                .workDir(resDir.getAbsolutePath())
-                .ability("e867a88f2;e2e44feff")
-                .build();
-        AiHelper.getInst().init(activity, params);
-        XTTSManager xttsManager = new XTTSManager(new XTTSManager.XTTSCallback() {
-            @Override
-            public void onError(int code, String msg) {
-                Log.d("XTTSManager", msg);
+        try {
+            if (!isVoiceEnabled){
+
+            }else {
+                AiHelper.Params params = AiHelper.Params.builder()
+                        .appId("4cb2bde0")
+                        .apiKey("82ecfdf75ee2cb0863cf49b7a5d239aa")
+                        .apiSecret("OTNhZTc5MTJlNjM0NGE0MGUwZjA1YTVi")
+                        .workDir(resDir.getAbsolutePath())
+                        .ability("e867a88f2;e2e44feff")
+                        .build();
+                AiHelper.getInst().init(activity, params);
+
+                XTTSManager xttsManager = new XTTSManager(new XTTSManager.XTTSCallback() {
+                    @Override
+                    public void onError(int code, String msg) {
+                        Log.d("XTTSManager", msg);
+                    }
+
+                    @Override
+                    public void onProgress(int pos, int len) {
+                        // 更新进度条 UI
+                    }
+                });
+                IVWManager ivwManager = new IVWManager();
+                ivwManager.start(resDir.getAbsolutePath() + "/ivw/keyword.txt", new IVWManager.IVWCallback() {
+                    @Override
+                    public void onWakeup(String result) {
+                        Log.d("WakeUpBroadcastReceiver", "onWakeup: " + result);
+                        xttsManager.startSpeaking("我是小白，有什么吩咐吗？", new XTTSParams());
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        Log.d("WakeUpBroadcastReceiver", "onError: " + error);
+                    }
+                });
             }
 
-            @Override
-            public void onProgress(int pos, int len) {
-                // 更新进度条 UI
-            }
-        });
-        IVWManager ivwManager = new IVWManager();
-        ivwManager.start(resDir.getAbsolutePath() + "/ivw/keyword.txt", new IVWManager.IVWCallback() {
-            @Override
-            public void onWakeup(String result) {
-                Log.d("WakeUpBroadcastReceiver", "onWakeup: " + result);
-                xttsManager.startSpeaking("我是小白，有什么吩咐吗？", new XTTSParams());
-            }
+        }catch (Exception e){
 
-            @Override
-            public void onError(String error) {
-                Log.d("WakeUpBroadcastReceiver", "onError: " + error);
-            }
-        });
+        }
+
+
     }
 
     /**

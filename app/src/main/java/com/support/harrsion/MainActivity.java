@@ -14,9 +14,11 @@ import androidx.core.view.GravityCompat;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.ComponentActivity;
@@ -61,7 +63,7 @@ public class MainActivity extends ComponentActivity {
         }
 
         if (permissionsToRequest.isEmpty()) {
-            DeviceUtil.startWakeUpService(this);
+            DeviceUtil.startWakeUpService(this, false);
         } else {
             PermissionUtil.requestPermissions(this, permissionsToRequest.toArray(new String[0]));
         }
@@ -87,6 +89,7 @@ public class MainActivity extends ComponentActivity {
         EditText inputText = findViewById(R.id.input_text);
         Button sendButton = findViewById(R.id.btn_send);
         Button newSessionButton = findViewById(R.id.btn_new_session);
+        ImageButton settingsButton = findViewById(R.id.btn_settings);
         ImageView sessionHistoryButton = findViewById(R.id.btn_session_history);
 
         // 获取会话历史抽屉
@@ -97,6 +100,17 @@ public class MainActivity extends ComponentActivity {
 
         // 更新会话历史抽屉
         conversationService.updateSessionHistoryDrawer();
+
+        // 初始化右侧抽屉的语音开关
+        Switch voiceToggle = findViewById(R.id.voice_toggle);
+        voiceToggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            // 调用DeviceUtil.startWakeUpService方法，并传入语音功能开关状态
+            DeviceUtil.startWakeUpService(this, isChecked);
+            
+            // 提示用户设置已保存
+            String message = isChecked ? "语音功能已开启" : "语音功能已关闭";
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        });
 
         // 新会话按钮点击事件
         newSessionButton.setOnClickListener(v -> createNewSession(inputText));
@@ -127,6 +141,9 @@ public class MainActivity extends ComponentActivity {
 
         // 会话历史抽屉按钮点击事件
         sessionHistoryButton.setOnClickListener(v -> conversationService.openSessionHistoryDrawer());
+        
+        // 设置按钮点击事件
+        settingsButton.setOnClickListener(v -> mDrawerLayout.openDrawer(GravityCompat.END));
 
         // 首页提示词点击事件
         uiService.setupPromptWordsListeners(inputText);
@@ -256,6 +273,41 @@ public class MainActivity extends ComponentActivity {
         }
     }
 
+    /**
+     * 显示设置对话框
+     */
+    private void showSettingsDialog() {
+        // 创建AlertDialog.Builder对象
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        builder.setTitle("设置");
+        
+        // 添加复选框选项
+        final boolean[] isVoiceEnabled = {false};
+        builder.setSingleChoiceItems(
+            new String[]{"开启语音功能"},
+            0,
+            (dialog, which) -> {
+                isVoiceEnabled[0] = which == 0;
+            }
+        );
+        
+        // 设置确定按钮
+        builder.setPositiveButton("确定", (dialog, which) -> {
+            // 调用DeviceUtil.startWakeUpService方法，并传入语音功能开关状态
+            DeviceUtil.startWakeUpService(this, isVoiceEnabled[0]);
+            
+            // 提示用户设置已保存
+            String message = isVoiceEnabled[0] ? "语音功能已开启" : "语音功能已关闭";
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        });
+        
+        // 设置取消按钮
+        builder.setNegativeButton("取消", null);
+        
+        // 显示对话框
+        builder.create().show();
+    }
+    
     /**
      * 显示消息
      */
