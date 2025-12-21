@@ -10,4 +10,5 @@ public class XTTSParams {
     public int pitch = 50;
     public int speed = 50;
     public int volume = 50;
+    public String textEncoding = "UTF-8";
 }

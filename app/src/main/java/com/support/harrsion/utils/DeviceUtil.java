@@ -10,18 +10,27 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.os.Build;
-import android.util.Log;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 
-import com.iflytek.aikit.core.AiHelper;
 import com.support.harrsion.R;
+import com.support.harrsion.voice.engine.IflytekTtsEngine;
+import com.support.harrsion.voice.engine.TtsEngine;
+import com.support.harrsion.voice.manager.AiEngineManager;
+import com.support.harrsion.voice.manager.IVWManager;
+import com.support.harrsion.voice.flow.TtsFlow;
+import com.support.harrsion.voice.pipeline.VoicePipelineImpl;
 import com.support.harrsion.dto.screenshot.Screenshot;
-import com.support.harrsion.dto.xtts.XTTSParams;
-import com.support.harrsion.manager.IVWManager;
-import com.support.harrsion.manager.XTTSManager;
 import com.support.harrsion.service.ScreenCaptureService;
+import com.support.harrsion.voice.flow.IvwFlow;
+import com.support.harrsion.voice.manager.XTTSManager;
+import com.support.harrsion.voice.input.AudioRecordInput;
+import com.support.harrsion.voice.vad.IflytekVad;
+import com.support.harrsion.voice.engine.IflytekIvwEngine;
+import com.support.harrsion.voice.input.AudioInput;
+import com.support.harrsion.voice.vad.VoiceActivityDetector;
+import com.support.harrsion.voice.engine.IvwEngine;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -125,9 +134,9 @@ public class DeviceUtil {
     /**
      * 创建通知渠道
      *
-     * @param context   上下文对象
-     * @param channelId 通道ID
-     * @param name      通道名称
+     * @param context    上下文对象
+     * @param channelId  通道ID
+     * @param name       通道名称
      * @param importance 通道重要程度
      */
     public static void createNotificationChannel(Context context, String channelId, String name, int importance) {
@@ -218,6 +227,7 @@ public class DeviceUtil {
 
     /**
      * 复制 assets 目录下的所有文件
+     *
      * @param context
      * @param assetDir
      * @param destDir
@@ -272,45 +282,40 @@ public class DeviceUtil {
             DeviceUtil.copyAssetsDir(activity, "kdxf", resDir);
         }
         try {
-            if (!isVoiceEnabled){
+            if (!isVoiceEnabled) {
 
-            }else {
-                AiHelper.Params params = AiHelper.Params.builder()
-                        .appId("4cb2bde0")
-                        .apiKey("82ecfdf75ee2cb0863cf49b7a5d239aa")
-                        .apiSecret("OTNhZTc5MTJlNjM0NGE0MGUwZjA1YTVi")
-                        .workDir(resDir.getAbsolutePath())
-                        .ability("e867a88f2;e2e44feff")
-                        .build();
-                AiHelper.getInst().init(activity, params);
+            } else {
+                AiEngineManager.init(activity, resDir);
+                IvwEngine ivwEngine = new IflytekIvwEngine(
+                        resDir.getAbsolutePath() + "/ivw/keyword.txt");
+                // WakeUp
+                AudioInput audioInput = new AudioRecordInput();
+                VoiceActivityDetector vad = new IflytekVad();
+                IVWManager ivw = new IVWManager(audioInput, vad, ivwEngine);
 
-                XTTSManager xttsManager = new XTTSManager(new XTTSManager.XTTSCallback() {
+                // TTS
+                XTTSManager tts = new XTTSManager();
+
+                VoicePipelineImpl pipeline = new VoicePipelineImpl(
+                        new IvwFlow(ivw),
+                        new TtsFlow(tts),
+                        true,
+                        true
+                );
+                ivwEngine.setCallback(new IvwEngine.Callback() {
                     @Override
-                    public void onError(int code, String msg) {
-                        Log.d("XTTSManager", msg);
+                    public void onWakeUp(String result) {
+                        pipeline.onWakeUp(result);
                     }
 
                     @Override
-                    public void onProgress(int pos, int len) {
-                        // 更新进度条 UI
-                    }
+                    public void onError(String msg) {}
                 });
-                IVWManager ivwManager = new IVWManager();
-                ivwManager.start(resDir.getAbsolutePath() + "/ivw/keyword.txt", new IVWManager.IVWCallback() {
-                    @Override
-                    public void onWakeup(String result) {
-                        Log.d("WakeUpBroadcastReceiver", "onWakeup: " + result);
-                        xttsManager.startSpeaking("我是小白，有什么吩咐吗？", new XTTSParams());
-                    }
-
-                    @Override
-                    public void onError(String error) {
-                        Log.d("WakeUpBroadcastReceiver", "onError: " + error);
-                    }
-                });
+                tts.setPipeline(pipeline);
+                pipeline.start();
             }
 
-        }catch (Exception e){
+        } catch (Exception e) {
 
         }
 

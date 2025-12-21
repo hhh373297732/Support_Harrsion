@@ -5,7 +5,7 @@ public interface AppConfig {
     class Model {
         public static String baseUrl = "https://open.bigmodel.cn/api/paas/v4";
         public static String modelName = "autoglm-phone";
-        public static String apiKey = "2611b5cb295546cf97233a9e5d05c6f3.nMrCYYl6I3eQTX34";
+        public static String apiKey = "64e0624cf2d94696ab0f53f6c4360ff1.yd36K7YZrTGKni9w";
     }
 
     class Agent {
