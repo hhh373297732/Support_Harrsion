@@ -15,6 +15,13 @@ public class XTTSManager implements TtsEngine.Callback {
     private final AudioOutput output;
     @Setter
     private VoicePipelineImpl pipeline;
+    @Setter
+    private TtsCompletionListener completionListener;
+
+    // 在 XTTSManager 类内部添加
+    public interface TtsCompletionListener {
+        void onTtsFinished();
+    }
 
     public XTTSManager() {
         output = new AudioTrackOutput();
@@ -38,11 +45,16 @@ public class XTTSManager implements TtsEngine.Callback {
 
     @Override
     public void onComplete() {
-        pipeline.onTtsComplete();
+        if (completionListener != null) {
+            completionListener.onTtsFinished();
+        }
     }
 
     @Override
     public void onError(int code, String msg) {
-        output.stop();
+        output.stop(); // 出错时可以停
+        if (completionListener != null) {
+            completionListener.onTtsFinished(); // 出错也视为结束，以便恢复唤醒
+        }
     }
 }

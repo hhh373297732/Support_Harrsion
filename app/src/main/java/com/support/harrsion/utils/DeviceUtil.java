@@ -15,20 +15,17 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 
 import com.support.harrsion.R;
-import com.support.harrsion.voice.engine.IflytekTtsEngine;
-import com.support.harrsion.voice.engine.TtsEngine;
+import com.support.harrsion.voice.core.AudioBus;
+import com.support.harrsion.voice.core.TtsWorker;
+import com.support.harrsion.voice.core.VoiceKernel;
+import com.support.harrsion.voice.core.WakeUpWorker;
 import com.support.harrsion.voice.manager.AiEngineManager;
-import com.support.harrsion.voice.manager.IVWManager;
-import com.support.harrsion.voice.flow.TtsFlow;
-import com.support.harrsion.voice.pipeline.VoicePipelineImpl;
 import com.support.harrsion.dto.screenshot.Screenshot;
 import com.support.harrsion.service.ScreenCaptureService;
-import com.support.harrsion.voice.flow.IvwFlow;
 import com.support.harrsion.voice.manager.XTTSManager;
 import com.support.harrsion.voice.input.AudioRecordInput;
 import com.support.harrsion.voice.vad.IflytekVad;
 import com.support.harrsion.voice.engine.IflytekIvwEngine;
-import com.support.harrsion.voice.input.AudioInput;
 import com.support.harrsion.voice.vad.VoiceActivityDetector;
 import com.support.harrsion.voice.engine.IvwEngine;
 
@@ -286,33 +283,48 @@ public class DeviceUtil {
 
             } else {
                 AiEngineManager.init(activity, resDir);
-                IvwEngine ivwEngine = new IflytekIvwEngine(
-                        resDir.getAbsolutePath() + "/ivw/keyword.txt");
-                // WakeUp
-                AudioInput audioInput = new AudioRecordInput();
+
+                AudioRecordInput audioInput = new AudioRecordInput();
+                AudioBus audioBus = new AudioBus(audioInput);
+
                 VoiceActivityDetector vad = new IflytekVad();
-                IVWManager ivw = new IVWManager(audioInput, vad, ivwEngine);
+                IvwEngine ivwEngine = new IflytekIvwEngine(resDir.getAbsolutePath() + "/ivw/keyword.txt");
+                WakeUpWorker wakeUpWorker = new WakeUpWorker(vad, ivwEngine);
 
-                // TTS
-                XTTSManager tts = new XTTSManager();
+                XTTSManager ttsManager = new XTTSManager();
+                TtsWorker ttsWorker = new TtsWorker(ttsManager);
 
-                VoicePipelineImpl pipeline = new VoicePipelineImpl(
-                        new IvwFlow(ivw),
-                        new TtsFlow(tts),
-                        true,
-                        true
-                );
-                ivwEngine.setCallback(new IvwEngine.Callback() {
-                    @Override
-                    public void onWakeUp(String result) {
-                        pipeline.onWakeUp(result);
-                    }
+                VoiceKernel kernel = new VoiceKernel(audioBus, wakeUpWorker, ttsWorker);
 
-                    @Override
-                    public void onError(String msg) {}
-                });
-                tts.setPipeline(pipeline);
-                pipeline.start();
+                kernel.start();
+
+//                IvwEngine ivwEngine = new IflytekIvwEngine(
+//                        resDir.getAbsolutePath() + "/ivw/keyword.txt");
+//                // WakeUp
+//                AudioInput audioInput = new AudioRecordInput();
+//                VoiceActivityDetector vad = new IflytekVad();
+//                IVWManager ivw = new IVWManager(audioInput, vad, ivwEngine);
+//
+//                // TTS
+//                XTTSManager tts = new XTTSManager();
+//
+//                VoicePipelineImpl pipeline = new VoicePipelineImpl(
+//                        new IvwFlow(ivw),
+//                        new TtsFlow(tts),
+//                        true,
+//                        true
+//                );
+//                ivwEngine.setCallback(new IvwEngine.Callback() {
+//                    @Override
+//                    public void onWakeUp(String result) {
+//                        pipeline.onWakeUp(result);
+//                    }
+//
+//                    @Override
+//                    public void onError(String msg) {}
+//                });
+//                tts.setPipeline(pipeline);
+//                pipeline.start();
             }
 
         } catch (Exception e) {
